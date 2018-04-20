@@ -3,48 +3,23 @@ package org.yeb
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input.Keys
 import com.badlogic.gdx.Screen
-//import com.badlogic.gdx.audio.Music;
-//import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL30
 import com.badlogic.gdx.graphics.OrthographicCamera
-import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.math.MathUtils
-import com.badlogic.gdx.math.Rectangle
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Vector3
-import com.badlogic.gdx.utils.Array
-import com.badlogic.gdx.utils.TimeUtils
 
-class GameScreen(internal val game: YebGame) : Screen {
 
-    private val dropImage = Texture(Gdx.files.internal("droplet.png"))
-    private val bucketImage = Texture(Gdx.files.internal("bucket.png"))
-    //Sound dropSound;
-    //Music rainMusic;
+class GameScreen(private val game: YebGame, private var level: Level) : Screen {
+
+    private var markedNodeId = 0
+
     private val camera = OrthographicCamera().also {
-         it.setToOrtho(false, 800F, 480F)
-    }
-    private val bucket = Rectangle((800 / 2 - 64 / 2).toFloat(),20F, 64F, 64F)
-    private val raindrops = Array<Rectangle>()
-
-    private var lastDropTime: Long = 0
-    private var dropsGathered: Int = 0
-
-    private fun spawnRaindrop() {
-        val raindrop = Rectangle()
-        raindrop.x = MathUtils.random(0, 800 - 64).toFloat()
-        raindrop.y = 480F
-        raindrop.width = 64F
-        raindrop.height = 64F
-        raindrops.add(raindrop)
-        lastDropTime = TimeUtils.nanoTime()
+        it.setToOrtho(false, 1000F, 800F)
     }
 
     override fun render(delta: Float) {
-        // clear the screen with a dark blue color. The
-        // arguments to glClearColor are the red, green
-        // blue and alpha component in the range [0,1]
-        // of the color to be used to clear the screen.
-        Gdx.gl.glClearColor(0F, 0F, 0.2F, 1F)
+        Gdx.gl.glClearColor(0.87F, 0.85F, 0.85F, 1F)
         Gdx.gl.glClear(GL30.GL_COLOR_BUFFER_BIT)
 
         // tell the camera to update its matrices.
@@ -57,46 +32,43 @@ class GameScreen(internal val game: YebGame) : Screen {
         // begin a new batch and draw the bucket and
         // all drops
         game.batch.begin()
-        game.font.draw(game.batch, "Drops Collected: $dropsGathered", 10F, 470F)
-        game.batch.draw(bucketImage, bucket.x, bucket.y)
-        raindrops.forEach { raindrop -> game.batch.draw(dropImage, raindrop.x, raindrop.y) }
+        game.font.draw(game.batch, "Current distance: ?, winning distance: ${level.winDistance}", 10F, 780F)
         game.batch.end()
+
+        val sr = ShapeRenderer()
+        sr.setAutoShapeType(true)
+        sr.projectionMatrix = camera.combined
+        sr.color = Color.BLACK
+
+        sr.begin(ShapeRenderer.ShapeType.Filled)
+        level.edges.forEach { edge ->
+            val n1 = level.nodeById(edge.id1)
+            val n2 = level.nodeById(edge.id2)
+            sr.rectLine(n1.x, n1.y, n2.x, n2.y, 6F)
+        }
+        level.nodes.forEach { node ->
+            sr.color = if (node.id == markedNodeId) Color.RED else
+                if (node.leaf) Color.BLUE else Color.GREEN
+            sr.circle(node.x, node.y, 10F)
+        }
+        sr.end()
 
         // process user input
         if (Gdx.input.isTouched) {
             val touchPos = Vector3()
             touchPos.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0F)
             camera.unproject(touchPos)
-            bucket.x = touchPos.x - 64 / 2
-        }
-        if (Gdx.input.isKeyPressed(Keys.LEFT))
-            bucket.x -= 400 * Gdx.graphics.deltaTime
-        if (Gdx.input.isKeyPressed(Keys.RIGHT))
-            bucket.x += 400 * Gdx.graphics.deltaTime
-
-        // make sure the bucket stays within the screen bounds
-        if (bucket.x < 0)
-            bucket.x = 0F
-        if (bucket.x > 800 - 64)
-            bucket.x = (800 - 64).toFloat()
-
-        // check if we need to create a new raindrop
-        if (TimeUtils.nanoTime() - lastDropTime > 1000000000)
-            spawnRaindrop()
-
-        // move the raindrops, remove any that are beneath the bottom edge of
-        // the screen or that hit the bucket. In the later case we play back
-        // a sound effect as well.
-        val iter = raindrops.iterator()
-        while (iter.hasNext()) {
-            val raindrop = iter.next()
-            raindrop.y -= 200 * Gdx.graphics.deltaTime
-            if (raindrop.y + 64 < 0)
-                iter.remove()
-            if (raindrop.overlaps(bucket)) {
-                dropsGathered++
-                //dropSound.play();
-                iter.remove()
+            level.nodes.forEach {node ->
+                if (touchPos.dst(node.x, node.y, 0F) < 10F) {
+                    when (markedNodeId) {
+                        0 -> markedNodeId = node.id
+                        node.id -> markedNodeId = 0
+                        else -> {
+                            level = level.createEdge(node.id, markedNodeId)
+                            markedNodeId = 0
+                        }
+                    }
+                }
             }
         }
 
@@ -108,11 +80,7 @@ class GameScreen(internal val game: YebGame) : Screen {
 
     override fun resize(width: Int, height: Int) {}
 
-    override fun show() {
-        // start the playback of the background music
-        // when the screen is shown
-        //rainMusic.play();
-    }
+    override fun show() {}
 
     override fun hide() {}
 
@@ -120,11 +88,6 @@ class GameScreen(internal val game: YebGame) : Screen {
 
     override fun resume() {}
 
-    override fun dispose() {
-        dropImage.dispose()
-        bucketImage.dispose()
-        // dropSound.dispose();
-        // rainMusic.dispose();
-    }
+    override fun dispose() {}
 
 }

@@ -23,7 +23,12 @@ class MainMenuScreen(internal val game: YebGame) : Screen {
         game.batch.end()
 
         if (Gdx.input.isTouched) {
-            game.screen = GameScreen(game)
+            val node1 = Node(1, 100F,100F, true)
+            val node2 = Node(2, 900F,100F, true)
+            val node3 = Node(3, 900F,700F, true)
+            val node4 = Node(4, 100F,700F, true)
+
+            game.screen = GameScreen(game, Level(setOf(node1, node2, node3, node4), setOf(), 100F))
             dispose()
         }
     }
