@@ -6,13 +6,8 @@ import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
 
 class MainMenuScreen(internal val game: YebGame) : Screen {
-    internal var camera: OrthographicCamera
-
-    init {
-
-        camera = OrthographicCamera()
-        camera.setToOrtho(false, 800f, 480f)
-
+    private val camera = OrthographicCamera().also {
+        it.setToOrtho(false, 800f, 480f)
     }
 
     override fun render(delta: Float) {

@@ -8,6 +8,8 @@ object DesktopLauncher {
     @JvmStatic
     fun main(arg: Array<String>) {
         val config = LwjglApplicationConfiguration()
+        config.width = 1000
+        config.height = 800
         LwjglApplication(YebGame(), config)
     }
 }

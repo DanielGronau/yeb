@@ -16,51 +16,25 @@ import com.badlogic.gdx.utils.TimeUtils
 
 class GameScreen(internal val game: YebGame) : Screen {
 
-    internal var dropImage: Texture
-    internal var bucketImage: Texture
+    private val dropImage = Texture(Gdx.files.internal("droplet.png"))
+    private val bucketImage = Texture(Gdx.files.internal("bucket.png"))
     //Sound dropSound;
     //Music rainMusic;
-    internal var camera: OrthographicCamera
-    internal var bucket: Rectangle
-    internal var raindrops: Array<Rectangle>
-    internal var lastDropTime: Long = 0
-    internal var dropsGathered: Int = 0
-
-    init {
-
-        // load the images for the droplet and the bucket, 64x64 pixels each
-        dropImage = Texture(Gdx.files.internal("droplet.png"))
-        bucketImage = Texture(Gdx.files.internal("bucket.png"))
-
-        // load the drop sound effect and the rain background "music"
-        // dropSound = Gdx.audio.newSound(Gdx.files.internal("drop.wav"));
-        // rainMusic = Gdx.audio.newMusic(Gdx.files.internal("rain.mp3"));
-        // rainMusic.setLooping(true);
-
-        // create the camera and the SpriteBatch
-        camera = OrthographicCamera()
-        camera.setToOrtho(false, 800f, 480f)
-
-        // create a Rectangle to logically represent the bucket
-        bucket = Rectangle()
-        bucket.x = (800 / 2 - 64 / 2).toFloat() // center the bucket horizontally
-        bucket.y = 20f // bottom left corner of the bucket is 20 pixels above
-        // the bottom screen edge
-        bucket.width = 64f
-        bucket.height = 64f
-
-        // create the raindrops array and spawn the first raindrop
-        raindrops = Array()
-        spawnRaindrop()
-
+    private val camera = OrthographicCamera().also {
+         it.setToOrtho(false, 800F, 480F)
     }
+    private val bucket = Rectangle((800 / 2 - 64 / 2).toFloat(),20F, 64F, 64F)
+    private val raindrops = Array<Rectangle>()
+
+    private var lastDropTime: Long = 0
+    private var dropsGathered: Int = 0
 
     private fun spawnRaindrop() {
         val raindrop = Rectangle()
         raindrop.x = MathUtils.random(0, 800 - 64).toFloat()
-        raindrop.y = 480f
-        raindrop.width = 64f
-        raindrop.height = 64f
+        raindrop.y = 480F
+        raindrop.width = 64F
+        raindrop.height = 64F
         raindrops.add(raindrop)
         lastDropTime = TimeUtils.nanoTime()
     }
@@ -70,7 +44,7 @@ class GameScreen(internal val game: YebGame) : Screen {
         // arguments to glClearColor are the red, green
         // blue and alpha component in the range [0,1]
         // of the color to be used to clear the screen.
-        Gdx.gl.glClearColor(0f, 0f, 0.2f, 1f)
+        Gdx.gl.glClearColor(0F, 0F, 0.2F, 1F)
         Gdx.gl.glClear(GL30.GL_COLOR_BUFFER_BIT)
 
         // tell the camera to update its matrices.
@@ -83,28 +57,26 @@ class GameScreen(internal val game: YebGame) : Screen {
         // begin a new batch and draw the bucket and
         // all drops
         game.batch.begin()
-        game.font.draw(game.batch, "Drops Collected: $dropsGathered", 0f, 480f)
+        game.font.draw(game.batch, "Drops Collected: $dropsGathered", 10F, 470F)
         game.batch.draw(bucketImage, bucket.x, bucket.y)
-        for (raindrop in raindrops) {
-            game.batch.draw(dropImage, raindrop.x, raindrop.y)
-        }
+        raindrops.forEach { raindrop -> game.batch.draw(dropImage, raindrop.x, raindrop.y) }
         game.batch.end()
 
         // process user input
         if (Gdx.input.isTouched) {
             val touchPos = Vector3()
-            touchPos.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f)
+            touchPos.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0F)
             camera.unproject(touchPos)
             bucket.x = touchPos.x - 64 / 2
         }
         if (Gdx.input.isKeyPressed(Keys.LEFT))
-            bucket.x -= 200 * Gdx.graphics.deltaTime
+            bucket.x -= 400 * Gdx.graphics.deltaTime
         if (Gdx.input.isKeyPressed(Keys.RIGHT))
-            bucket.x += 200 * Gdx.graphics.deltaTime
+            bucket.x += 400 * Gdx.graphics.deltaTime
 
         // make sure the bucket stays within the screen bounds
         if (bucket.x < 0)
-            bucket.x = 0f
+            bucket.x = 0F
         if (bucket.x > 800 - 64)
             bucket.x = (800 - 64).toFloat()
 

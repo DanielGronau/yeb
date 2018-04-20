@@ -15,10 +15,6 @@ class YebGame : Game() {
         this.setScreen(MainMenuScreen(this))
     }
 
-    override fun render() {
-        super.render() //important!
-    }
-
     override fun dispose() {
         batch.dispose()
         font.dispose()
