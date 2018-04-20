@@ -9,8 +9,7 @@ buildscript {
     }
     dependencies {
         classpath 'de.richsource.gradle.plugins:gwt-gradle-plugin:0.6'
-        
-
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.2.30'
     }
 }
 
@@ -26,6 +25,7 @@ allprojects {
         box2DLightsVersion = '1.4'
         ashleyVersion = '1.7.0'
         aiVersion = '1.8.0'
+        kotlinVersion = '1.2.30'
     }
 
     repositories {
@@ -37,7 +37,7 @@ allprojects {
 }
 
 project(":desktop") {
-    apply plugin: "java"
+    apply plugin: "kotlin"
 
 
     dependencies {
@@ -45,7 +45,7 @@ project(":desktop") {
         compile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
         compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
         compile "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
-        
+        compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlinVersion"
     }
 }
 
@@ -59,17 +59,17 @@ project(":html") {
         compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"
         compile "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
         compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"
-        
+        compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlinVersion"
     }
 }
 
 project(":core") {
-    apply plugin: "java"
+    apply plugin: "kotlin"
 
 
     dependencies {
         compile "com.badlogicgames.gdx:gdx:$gdxVersion"
-        
+        compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlinVersion"
     }
 }
 
