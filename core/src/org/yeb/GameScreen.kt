@@ -13,6 +13,7 @@ import com.badlogic.gdx.math.Vector3
 class GameScreen(private val game: YebGame, private var level: Level) : Screen {
 
     private var markedNodeId = 0
+    private var markedEdge: Edge? = null
 
     private val camera = OrthographicCamera().also {
         it.setToOrtho(false, 1000F, 800F)
@@ -21,7 +22,6 @@ class GameScreen(private val game: YebGame, private var level: Level) : Screen {
     override fun render(delta: Float) {
         Gdx.gl.glClearColor(0.87F, 0.85F, 0.85F, 1F)
         Gdx.gl.glClear(GL30.GL_COLOR_BUFFER_BIT)
-
         // tell the camera to update its matrices.
         camera.update()
 
@@ -38,17 +38,23 @@ class GameScreen(private val game: YebGame, private var level: Level) : Screen {
         val sr = ShapeRenderer()
         sr.setAutoShapeType(true)
         sr.projectionMatrix = camera.combined
-        sr.color = Color.BLACK
 
         sr.begin(ShapeRenderer.ShapeType.Filled)
         level.edges.forEach { edge ->
             val n1 = level.nodeById(edge.id1)
             val n2 = level.nodeById(edge.id2)
+            sr.color = Color.BLACK
             sr.rectLine(n1.x, n1.y, n2.x, n2.y, 6F)
+            val middle = level.middle(edge)
+            sr.color = if (edge == markedEdge) Color.RED else Color.PURPLE
+            sr.circle(middle.x, middle.y, 10F)
         }
         level.nodes.forEach { node ->
-            sr.color = if (node.id == markedNodeId) Color.RED else
-                if (node.leaf) Color.BLUE else Color.GREEN
+            sr.color = when {
+                node.id == markedNodeId -> Color.RED
+                node.leaf -> Color.BLUE
+                else -> Color.GREEN
+            }
             sr.circle(node.x, node.y, 10F)
         }
         sr.end()
@@ -58,15 +64,39 @@ class GameScreen(private val game: YebGame, private var level: Level) : Screen {
             val touchPos = Vector3()
             touchPos.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0F)
             camera.unproject(touchPos)
-            level.nodes.forEach {node ->
-                if (touchPos.dst(node.x, node.y, 0F) < 10F) {
-                    when (markedNodeId) {
-                        0 -> markedNodeId = node.id
-                        node.id -> markedNodeId = 0
-                        else -> {
-                            level = level.createEdge(node.id, markedNodeId)
-                            markedNodeId = 0
-                        }
+            val pickedNode = level.nodes.firstOrNull { node -> touchPos.dst(node.x, node.y, 0F) < 10F }
+            if (pickedNode != null) {
+                if (markedNodeId == 0 && markedEdge == null) {
+                    markedNodeId = pickedNode.id
+                } else if (markedEdge != null) {
+                    val (levelWithEdge, id) = level.splitEdge(markedEdge!!)
+                    level = levelWithEdge.createEdge(id, pickedNode.id) ?: level
+                    markedEdge = null
+                } else if (markedNodeId == pickedNode.id) {
+                    markedNodeId = 0
+                } else {
+                    level = level.createEdge(markedNodeId, pickedNode.id) ?: level
+                    markedNodeId = 0
+                }
+            } else {
+                val pickedEdge = level.edges.firstOrNull { edge ->
+                    val middle = level.middle(edge)
+                    touchPos.dst(middle.x, middle.y, 0F) < 10F
+                }
+                if (pickedEdge != null) {
+                    if (markedNodeId == 0 && markedEdge == null) {
+                        markedEdge = pickedEdge
+                    } else if (markedNodeId != 0) {
+                        val (levelWithEdge, id) = level.splitEdge(pickedEdge)
+                        level = levelWithEdge.createEdge(id, markedNodeId) ?: level
+                        markedNodeId = 0
+                    } else if (markedEdge == pickedEdge) {
+                        markedEdge = null
+                    } else {
+                        val (levelWithEdge1, id1) = level.splitEdge(pickedEdge)
+                        val (levelWithEdge2, id2) = levelWithEdge1.splitEdge(markedEdge!!)
+                        level = levelWithEdge2.createEdge(id1, id2) ?: level
+                        markedEdge = null
                     }
                 }
             }

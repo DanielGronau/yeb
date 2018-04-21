@@ -28,7 +28,7 @@ class MainMenuScreen(internal val game: YebGame) : Screen {
             val node3 = Node(3, 900F,700F, true)
             val node4 = Node(4, 100F,700F, true)
 
-            game.screen = GameScreen(game, Level(setOf(node1, node2, node3, node4), setOf(), 100F))
+            game.screen = GameScreen(game, Level(setOf(node1, node2, node3, node4), setOf(), 1840F))
             dispose()
         }
     }
