@@ -32,7 +32,7 @@ class GameScreen(private val game: YebGame, private var level: Level) : Screen {
         // begin a new batch and draw the bucket and
         // all drops
         game.batch.begin()
-        game.font.draw(game.batch, "Current distance: ?, winning distance: ${level.winDistance}", 10F, 780F)
+        game.font.draw(game.batch, "Current distance: ${level.distanceEdges()}, winning distance: ${level.winDistance}", 10F, 780F)
         game.batch.end()
 
         val sr = ShapeRenderer()
@@ -76,6 +76,8 @@ class GameScreen(private val game: YebGame, private var level: Level) : Screen {
             game.screen = MainMenuScreen(game)
             dispose()
         }
+
+        level = level.wiggle()
     }
 
     override fun resize(width: Int, height: Int) {}
