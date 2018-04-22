@@ -1,7 +1,9 @@
 package org.yeb;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL30;
@@ -27,6 +29,67 @@ class GameScreen implements Screen {
         this.game = game;
         this.level = level;
         camera.setToOrtho(false, 1000F, 800F);
+
+        Gdx.input.setInputProcessor(new InputAdapter(){
+            @Override
+            public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+                mouseDown(screenX, screenY, button);
+                return true;
+            }
+        });
+    }
+
+    private void mouseDown(int x, int y, int button) {
+        if (button != Input.Buttons.LEFT) {
+            return;
+        }
+        Vector3 touchPos = new Vector3();
+        touchPos.set(x, y, 0F);
+        camera.unproject(touchPos);
+        boolean hasPickedNode =
+                level.nodes
+                        .find(node -> touchPos.dst(node.x, node.y, 0F) < 10F)
+                        .peek(pickedNode -> {
+                            if (markedNodeId == 0 && markedEdge == null) {
+                                markedNodeId = pickedNode.id;
+                            } else if (markedEdge != null) {
+                                Tuple2<Level, Integer> tuple = level.splitEdge(markedEdge);
+                                Level levelWithEdge = tuple._1;
+                                level = levelWithEdge.createEdge(tuple._2, pickedNode.id).getOrElse(level);
+                                markedEdge = null;
+                            } else if (markedNodeId == pickedNode.id) {
+                                markedNodeId = 0;
+                            } else {
+                                level = level.createEdge(markedNodeId, pickedNode.id).getOrElse(level);
+                                markedNodeId = 0;
+                            }
+                        }).isDefined();
+
+        if (!hasPickedNode) {
+            level.edges.find(
+                    edge -> {
+                        Vector2 middle = level.middle(edge);
+                        return touchPos.dst(middle.x, middle.y, 0F) < 10F;
+                    }).peek(pickedEdge -> {
+                if (markedNodeId == 0 && markedEdge == null) {
+                    markedEdge = pickedEdge;
+                } else if (markedNodeId != 0) {
+                    Tuple2<Level, Integer> tuple = level.splitEdge(pickedEdge);
+                    Level levelWithEdge = tuple._1;
+                    level = levelWithEdge.createEdge(tuple._2, markedNodeId).getOrElse(level);
+                    markedNodeId = 0;
+                } else if (markedEdge == pickedEdge) {
+                    markedEdge = null;
+                } else {
+                    Tuple2<Level, Integer> tuple1 = level.splitEdge(pickedEdge);
+                    Level levelWithEdge1 = tuple1._1;
+                    Tuple2<Level, Integer> tuple2 = levelWithEdge1.splitEdge(markedEdge);
+                    Level levelWithEdge2 = tuple2._1;
+                    level = levelWithEdge2.createEdge(tuple1._2, tuple2._2).getOrElse(level);
+                    markedEdge = null;
+                }
+            });
+        }
     }
 
 
@@ -70,57 +133,6 @@ class GameScreen implements Screen {
             sr.circle(node.x, node.y, 10F);
         });
         sr.end();
-
-        // process user input
-        if (Gdx.input.isTouched()) {
-            Vector3 touchPos = new Vector3();
-            touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0F);
-            camera.unproject(touchPos);
-            boolean hasPickedNode =
-                    level.nodes
-                            .find(node -> touchPos.dst(node.x, node.y, 0F) < 10F)
-                            .peek(pickedNode -> {
-                                if (markedNodeId == 0 && markedEdge == null) {
-                                    markedNodeId = pickedNode.id;
-                                } else if (markedEdge != null) {
-                                    Tuple2<Level, Integer> tuple = level.splitEdge(markedEdge);
-                                    Level levelWithEdge = tuple._1;
-                                    level = levelWithEdge.createEdge(tuple._2, pickedNode.id).getOrElse(level);
-                                    markedEdge = null;
-                                } else if (markedNodeId == pickedNode.id) {
-                                    markedNodeId = 0;
-                                } else {
-                                    level = level.createEdge(markedNodeId, pickedNode.id).getOrElse(level);
-                                    markedNodeId = 0;
-                                }
-                            }).isDefined();
-
-            if (!hasPickedNode) {
-                level.edges.find(
-                        edge -> {
-                            Vector2 middle = level.middle(edge);
-                            return touchPos.dst(middle.x, middle.y, 0F) < 10F;
-                        }).peek(pickedEdge -> {
-                    if (markedNodeId == 0 && markedEdge == null) {
-                        markedEdge = pickedEdge;
-                    } else if (markedNodeId != 0) {
-                        Tuple2<Level, Integer> tuple = level.splitEdge(pickedEdge);
-                        Level levelWithEdge = tuple._1;
-                        level = levelWithEdge.createEdge(tuple._2, markedNodeId).getOrElse(level);
-                        markedNodeId = 0;
-                    } else if (markedEdge == pickedEdge) {
-                        markedEdge = null;
-                    } else {
-                        Tuple2<Level, Integer> tuple1 = level.splitEdge(pickedEdge);
-                        Level levelWithEdge1 = tuple1._1;
-                        Tuple2<Level, Integer> tuple2 = levelWithEdge1.splitEdge(markedEdge);
-                        Level levelWithEdge2 = tuple2._1;
-                        level = levelWithEdge2.createEdge(tuple1._2, tuple2._2).getOrElse(level);
-                        markedEdge = null;
-                    }
-                });
-            }
-        }
 
         if (Gdx.input.isKeyPressed(Keys.ESCAPE)) {
             game.setScreen(new MainMenuScreen(game));
