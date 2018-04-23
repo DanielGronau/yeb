@@ -12,15 +12,14 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import io.vavr.Tuple2;
-import org.yeb.model.Edge;
+import io.vavr.control.Option;
 import org.yeb.model.Level;
 import org.yeb.model.Node;
 
 
 class GameScreen implements Screen {
 
-    private int markedNodeId;
-    private Edge markedEdge;
+    private Option<NodeLike> marked = Option.none();
     private final YebGame game;
     private final OrthographicCamera camera = new OrthographicCamera();
     private Level level;
@@ -46,49 +45,24 @@ class GameScreen implements Screen {
         Vector3 touchPos = new Vector3();
         touchPos.set(x, y, 0F);
         camera.unproject(touchPos);
-        boolean hasPickedNode =
-                level.nodes
-                        .find(node -> touchPos.dst(node.x, node.y, 0F) < 10F)
-                        .peek(pickedNode -> {
-                            if (markedNodeId == 0 && markedEdge == null) {
-                                markedNodeId = pickedNode.id;
-                            } else if (markedEdge != null) {
-                                Tuple2<Level, Integer> tuple = level.splitEdge(markedEdge);
-                                Level levelWithEdge = tuple._1;
-                                level = levelWithEdge.createEdge(tuple._2, pickedNode.id).getOrElse(level);
-                                markedEdge = null;
-                            } else if (markedNodeId == pickedNode.id) {
-                                markedNodeId = 0;
-                            } else {
-                                level = level.createEdge(markedNodeId, pickedNode.id).getOrElse(level);
-                                markedNodeId = 0;
-                            }
-                        }).isDefined();
-
-        if (!hasPickedNode) {
-            level.edges.find(
-                    edge -> {
-                        Vector2 middle = level.middle(edge);
-                        return touchPos.dst(middle.x, middle.y, 0F) < 10F;
-                    }).peek(pickedEdge -> {
-                if (markedNodeId == 0 && markedEdge == null) {
-                    markedEdge = pickedEdge;
-                } else if (markedNodeId != 0) {
-                    Tuple2<Level, Integer> tuple = level.splitEdge(pickedEdge);
-                    Level levelWithEdge = tuple._1;
-                    level = levelWithEdge.createEdge(tuple._2, markedNodeId).getOrElse(level);
-                    markedNodeId = 0;
-                } else if (markedEdge == pickedEdge) {
-                    markedEdge = null;
-                } else {
-                    Tuple2<Level, Integer> tuple1 = level.splitEdge(pickedEdge);
-                    Level levelWithEdge1 = tuple1._1;
-                    Tuple2<Level, Integer> tuple2 = levelWithEdge1.splitEdge(markedEdge);
-                    Level levelWithEdge2 = tuple2._1;
-                    level = levelWithEdge2.createEdge(tuple1._2, tuple2._2).getOrElse(level);
-                    markedEdge = null;
-                }
-            });
+        Option<NodeLike> picked = level.nodes
+                .find(node -> touchPos.dst(node.x, node.y, 0F) < 10F)
+                .map(node -> NodeLike.ofNodeId(node.id))
+                .orElse(() ->
+                        level.edges.find(
+                                edge -> {
+                                    Vector2 middle = level.middle(edge);
+                                    return touchPos.dst(middle.x, middle.y, 0F) < 10F;
+                                }).map(edge -> NodeLike.ofEdge(edge)));
+        if (marked.isEmpty()) {
+            marked = picked;
+        } else if (picked.isDefined()){
+            Tuple2<Level, Integer> tuple1 = picked.get().withNode(level);
+            Level levelWithEdge1 = tuple1._1;
+            Tuple2<Level, Integer> tuple2 = marked.get().withNode(levelWithEdge1);
+            Level levelWithEdge2 = tuple2._1;
+            level = levelWithEdge2.createEdge(tuple1._2, tuple2._2).getOrElse(level);
+            marked = Option.none();
         }
     }
 
@@ -123,11 +97,13 @@ class GameScreen implements Screen {
             sr.setColor(Color.BLACK);
             sr.rectLine(n1.x, n1.y, n2.x, n2.y, 6F);
             Vector2 middle = level.middle(edge);
-            sr.setColor(edge == markedEdge ? Color.RED : Color.PURPLE);
+            sr.setColor(marked.flatMap(m -> m.asEdge().map(e-> e == edge)).getOrElse(false)
+                    ? Color.RED
+                    : Color.PURPLE);
             sr.circle(middle.x, middle.y, 10F);
         });
         level.nodes.forEach(node -> {
-            if (node.id == markedNodeId) sr.setColor(Color.RED);
+            if (marked.map(m -> node.id == m.asNode(level).id ).getOrElse(false)) sr.setColor(Color.RED);
             else if (node.leaf) sr.setColor(Color.BLUE);
             else sr.setColor(Color.GREEN);
             sr.circle(node.x, node.y, 10F);
