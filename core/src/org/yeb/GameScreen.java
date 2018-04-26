@@ -36,8 +36,7 @@ class GameScreen extends ScreenAdapter {
         inputMultiplexer.addProcessor(new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-                mouseDown(screenX, screenY, button);
-                return true;
+                return mouseDown(screenX, screenY, button);
             }
         });
         inputMultiplexer.addProcessor(stage);
@@ -47,6 +46,11 @@ class GameScreen extends ScreenAdapter {
         TextButton button = new TextButton("Button1", skin);
         button.setPosition(20, 20);
         button.addListener(new InputListener() {
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                System.out.println("Press a Button - UP");
+            }
 
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
@@ -78,36 +82,40 @@ class GameScreen extends ScreenAdapter {
         return skin;
     }
 
-    private void mouseDown(int x, int y, int button) {
+    private boolean mouseDown(int x, int y, int button) {
         if (button != Input.Buttons.LEFT) {
-            return;
+            return false;
         }
-        Vector3 touchPos = new Vector3();
-        touchPos.set(x, y, 0F);
+        Vector3 touchPos = new Vector3(x, y, 0F);
         camera.unproject(touchPos);
-        Option<NodeLike> picked = level.nodes
-                                          .find(node -> touchPos.dst(node.x, node.y, 0F) < 10F)
-                                          .map(node -> NodeLike.ofNodeId(node.id))
-                                          .orElse(() ->
-                                                          level.edges.find(
-                                                                  edge -> {
-                                                                      Vector2 middle = level.middle(edge);
-                                                                      return touchPos.dst(middle.x, middle.y, 0F) < 10F;
-                                                                  }).map(NodeLike::ofEdge));
-        if (marked.isEmpty()) {
-            marked = picked;
-        } else if (picked.isDefined()) {
-            Tuple2<Level, Integer> tuple1 = picked.get().withNode(level);
-            Level levelWithEdge1 = tuple1._1;
-            Tuple2<Level, Integer> tuple2 = marked.get().withNode(levelWithEdge1);
-            Level levelWithEdge2 = tuple2._1;
-            level = levelWithEdge2.createEdge(tuple1._2, tuple2._2).getOrElse(level);
-            marked = Option.none();
-        }
+        return level.nodes
+                       .find(node -> touchPos.dst(node.x, node.y, 0F) < 10F)
+                       .map(node -> NodeLike.ofNodeId(node.id))
+                       .orElse(() -> level.edges.find(
+                               edge -> {
+                                   Vector2 middle = level.middle(edge);
+                                   return touchPos.dst(middle.x, middle.y, 0F) < 10F;
+                               }).map(NodeLike::ofEdge))
+                       .map(picked -> {
+                           if (marked.isEmpty()) {
+                               marked = Option.of(picked);
+                           } else {
+                               Tuple2<Level, Integer> tuple1 = picked.withNode(level);
+                               Level levelWithEdge1 = tuple1._1;
+                               Tuple2<Level, Integer> tuple2 = marked.get().withNode(levelWithEdge1);
+                               Level levelWithEdge2 = tuple2._1;
+                               level = levelWithEdge2.createEdge(tuple1._2, tuple2._2).getOrElse(level);
+                               marked = Option.none();
+                           }
+                           return true;
+                       })
+                       .getOrElse(false);
     }
 
     @Override
     public void render(float delta) {
+        level = level.wiggle();
+
         Gdx.gl.glClearColor(0.87F, 0.85F, 0.85F, 1F);
         Gdx.gl.glClear(GL30.GL_COLOR_BUFFER_BIT);
         // tell the camera to update its matrices.
@@ -154,8 +162,6 @@ class GameScreen extends ScreenAdapter {
             game.setScreen(new MainMenuScreen(game));
             dispose();
         }
-
-        level = level.wiggle();
 
         stage.act();
         stage.draw();
