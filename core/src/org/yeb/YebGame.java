@@ -3,10 +3,11 @@ package org.yeb;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import org.yeb.menu.MainMenuScreen;
 
 public class YebGame extends Game {
-    SpriteBatch batch;
-    BitmapFont font;
+    public SpriteBatch batch;
+    public BitmapFont font;
 
     @Override
     public void create() {

@@ -1,4 +1,4 @@
-package org.yeb;
+package org.yeb.game;
 
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.Input.Keys;
@@ -13,21 +13,23 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import io.vavr.Tuple2;
 import io.vavr.control.Option;
+import org.yeb.YebGame;
+import org.yeb.menu.MainMenuScreen;
 import org.yeb.model.Level;
 import org.yeb.model.Node;
+import org.yeb.util.Skins;
 
 
-class GameScreen extends ScreenAdapter {
+public class GameScreen extends ScreenAdapter {
 
     private Option<NodeLike> marked = Option.none();
     private final YebGame game;
     private final OrthographicCamera camera = new OrthographicCamera();
     private Level level;
-    Skin skin;
 
     private Stage stage = new Stage();
 
-    GameScreen(YebGame game, Level level) {
+    public GameScreen(YebGame game, Level level) {
         this.game = game;
         this.level = level;
         camera.setToOrtho(false, 1000F, 800F);
@@ -42,7 +44,7 @@ class GameScreen extends ScreenAdapter {
         inputMultiplexer.addProcessor(stage);
         Gdx.input.setInputProcessor(inputMultiplexer);
 
-        makeSkin();
+        Skin skin = Skins.makeSkin(game.font, Color.GRAY);
         TextButton button = new TextButton("Button1", skin);
         button.setPosition(20, 20);
         button.addListener(new InputListener() {
@@ -59,27 +61,6 @@ class GameScreen extends ScreenAdapter {
             }
         });
         stage.addActor(button);
-    }
-
-    private Skin makeSkin() {
-        skin = new Skin();
-        skin.add("default", game.font);
-
-        //Create a texture
-        Pixmap pixmap = new Pixmap(70, 30, Pixmap.Format.RGB888);
-        pixmap.setColor(Color.WHITE);
-        pixmap.fill();
-        skin.add("background", new Texture(pixmap));
-
-        //Create a button style
-        TextButton.TextButtonStyle textButtonStyle = new TextButton.TextButtonStyle();
-        textButtonStyle.up = skin.newDrawable("background", Color.GRAY);
-        textButtonStyle.down = skin.newDrawable("background", Color.DARK_GRAY);
-        textButtonStyle.checked = skin.newDrawable("background", Color.DARK_GRAY);
-        textButtonStyle.over = skin.newDrawable("background", Color.LIGHT_GRAY);
-        textButtonStyle.font = skin.getFont("default");
-        skin.add("default", textButtonStyle);
-        return skin;
     }
 
     private boolean mouseDown(int x, int y, int button) {

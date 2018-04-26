@@ -1,4 +1,4 @@
-package org.yeb;
+package org.yeb.menu;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
@@ -6,15 +6,17 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import io.vavr.collection.HashSet;
+import org.yeb.game.GameScreen;
+import org.yeb.YebGame;
 import org.yeb.model.Level;
 import org.yeb.model.Node;
 
-class MainMenuScreen extends ScreenAdapter {
+public class MainMenuScreen extends ScreenAdapter {
 
     private final YebGame game;
     private final OrthographicCamera camera = new OrthographicCamera();
 
-    MainMenuScreen(YebGame game) {
+    public MainMenuScreen(YebGame game) {
         this.game = game;
         camera.setToOrtho(false, 1000f, 800f);
     }
