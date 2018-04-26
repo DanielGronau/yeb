@@ -1,6 +1,7 @@
 package org.yeb;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import org.yeb.menu.MainMenuScreen;
@@ -8,6 +9,7 @@ import org.yeb.menu.MainMenuScreen;
 public class YebGame extends Game {
     public SpriteBatch batch;
     public BitmapFont font;
+    public Color background = new Color(0.87F, 0.85F, 0.85F, 1F);
 
     @Override
     public void create() {

@@ -97,21 +97,18 @@ public class GameScreen extends ScreenAdapter {
     public void render(float delta) {
         level = level.wiggle();
 
-        Gdx.gl.glClearColor(0.87F, 0.85F, 0.85F, 1F);
+        Color background = game.background;
+        Gdx.gl.glClearColor(background.r, background.g, background.b, background.a);
         Gdx.gl.glClear(GL30.GL_COLOR_BUFFER_BIT);
-        // tell the camera to update its matrices.
+
         camera.update();
 
-        // tell the SpriteBatch to render in the
-        // coordinate system specified by the camera.
         game.batch.setProjectionMatrix(camera.combined);
 
-        // begin a new batch and draw the bucket and
-        // all drops
         game.batch.begin();
         game.font.setColor(Color.DARK_GRAY);
         game.font.draw(game.batch,
-                "Current distance: " + level.distanceEdges() + ", winning distance: " + level.winDistance,
+                "Winning distance: " + level.winDistance + ", current distance: " + level.distanceEdges(),
                 10F, 780F);
         game.batch.end();
 

@@ -4,47 +4,52 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import io.vavr.collection.HashSet;
-import org.yeb.game.GameScreen;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import org.yeb.YebGame;
+import org.yeb.game.GameScreen;
 import org.yeb.model.Level;
-import org.yeb.model.Node;
+import org.yeb.util.Skins;
 
 public class MainMenuScreen extends ScreenAdapter {
 
-    private final YebGame game;
-    private final OrthographicCamera camera = new OrthographicCamera();
+    private final Stage stage = new Stage();
+    private final Color background;
+
 
     public MainMenuScreen(YebGame game) {
-        this.game = game;
-        camera.setToOrtho(false, 1000f, 800f);
+        background = game.background;
+        Skin skin = Skins.makeSkin(game.font, Color.BLUE);
+        Levels.LEVELS.zipWithIndex().forEach(tuple -> {
+            Level level = tuple._1;
+            int index = tuple._2;
+
+            TextButton button = new TextButton("Level " + (index + 1), skin);
+            button.setPosition(100, 700 - 50 * index);
+            button.addListener(new InputListener() {
+
+                @Override
+                public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                    game.setScreen(new GameScreen(game, level));
+                    dispose();
+                    return true;
+                }
+            });
+            stage.addActor(button);
+        });
+        Gdx.input.setInputProcessor(stage);
     }
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(0F, 0F, 0.2F, 1F);
+        Gdx.gl.glClearColor(background.r, background.g, background.b, background.a);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        camera.update();
-        game.batch.setProjectionMatrix(camera.combined);
-
-        game.batch.begin();
-        game.font.setColor(Color.WHITE);
-        game.font.draw(game.batch, "Welcome to Yeb!!! ", 100F, 150F);
-        game.font.draw(game.batch, "Tap anywhere to begin!", 100F, 100F);
-        game.batch.end();
-
-        if (Gdx.input.isTouched()) {
-            Node node1 = new Node(1, 100F, 100F, true);
-            Node node2 = new Node(2, 900F, 100F, true);
-            Node node3 = new Node(3, 900F, 700F, true);
-            Node node4 = new Node(4, 100F, 700F, true);
-
-            game.setScreen(new GameScreen(game,
-                    new Level(HashSet.of(node1, node2, node3, node4), HashSet.empty(), 1840F)));
-            dispose();
-        }
+        stage.act();
+        stage.draw();
     }
 
 }
