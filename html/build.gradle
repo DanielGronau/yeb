@@ -13,10 +13,8 @@ gwt {
     devModules 'org.yeb.GdxDefinitionSuperdev'
     project.webAppDirName = 'webapp'
 
-    compiler {
-        strict = true
-        disableCastChecking = true
-    }
+    compiler.strict = true
+    compiler.disableCastChecking = true
 }
 
 task draftRun(type: JettyRunWar) {
