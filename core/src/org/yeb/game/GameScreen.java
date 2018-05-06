@@ -11,24 +11,26 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import io.vavr.Tuple2;
-import io.vavr.collection.List;
-import io.vavr.control.Option;
 import org.yeb.YebGame;
 import org.yeb.menu.MainMenuScreen;
 import org.yeb.model.Level;
 import org.yeb.model.Node;
+import org.yeb.model.Pair;
 import org.yeb.util.Skins;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Stack;
 
 
 public class GameScreen extends ScreenAdapter {
 
-    private Option<NodeLike> marked = Option.none();
+    private Optional<NodeLike> marked = Optional.empty();
     private final YebGame game;
     private final OrthographicCamera camera = new OrthographicCamera();
     private boolean win = false;
     private Level level;
-    private List<Level> history = List.empty();
+    private Stack<Level> history = new Stack<>();
 
     private Stage stage = new Stage();
 
@@ -80,30 +82,34 @@ public class GameScreen extends ScreenAdapter {
         Vector3 touchPos = new Vector3(x, y, 0F);
         camera.unproject(touchPos);
         return level.nodes
-                       .find(node -> touchPos.dst(node.x, node.y, 0F) < 10F)
+                       .stream()
+                       .filter(node -> touchPos.dst(node.x, node.y, 0F) < 10F)
+                       .findFirst()
                        .map(node -> NodeLike.ofNodeId(node.id))
-                       .orElse(() -> level.edges.find(
+                       .map(Optional::of)
+                       .orElseGet(() -> level.edges.stream().filter(
                                edge -> {
                                    Vector2 middle = level.middle(edge);
                                    return touchPos.dst(middle.x, middle.y, 0F) < 10F;
-                               }).map(NodeLike::ofEdge))
+                               }).findFirst()
+                               .map(NodeLike::ofEdge))
                        .map(picked -> {
-                           if (marked.isEmpty()) {
-                               marked = Option.of(picked);
+                           if (! marked.isPresent()) {
+                               marked = Optional.of(picked);
                            } else {
-                               Tuple2<Level, Integer> tuple1 = picked.withNode(level);
+                               Pair<Level, Integer> tuple1 = picked.withNode(level);
                                Level levelWithEdge1 = tuple1._1;
-                               Tuple2<Level, Integer> tuple2 = marked.get().withNode(levelWithEdge1);
+                               Pair<Level, Integer> tuple2 = marked.get().withNode(levelWithEdge1);
                                Level levelWithEdge2 = tuple2._1;
-                               levelWithEdge2.createEdge(tuple1._2, tuple2._2).forEach(newLevel -> {
-                                   history = history.push(level);
+                               levelWithEdge2.createEdge(tuple1._2, tuple2._2).ifPresent(newLevel -> {
+                                   history.push(level);
                                    level = newLevel;
                                });
-                               marked = Option.none();
+                               marked = Optional.empty();
                            }
                            return true;
                        })
-                       .getOrElse(false);
+                       .orElse(false);
     }
 
     @Override
@@ -138,13 +144,13 @@ public class GameScreen extends ScreenAdapter {
             sr.setColor(Color.BLACK);
             sr.rectLine(n1.x, n1.y, n2.x, n2.y, 6F);
             Vector2 middle = level.middle(edge);
-            sr.setColor(marked.flatMap(m -> m.asEdge().map(e -> e == edge)).getOrElse(false)
+            sr.setColor(marked.flatMap(m -> m.asEdge().map(e -> e == edge)).orElse(false)
                                 ? Color.RED
                                 : Color.PURPLE);
             sr.circle(middle.x, middle.y, 10F);
         });
         level.nodes.forEach(node -> {
-            if (marked.map(m -> node.id == m.asNode(level).id).getOrElse(false)) sr.setColor(Color.RED);
+            if (marked.map(m -> node.id == m.asNode(level).id).orElse(false)) sr.setColor(Color.RED);
             else if (node.leaf) sr.setColor(Color.BLUE);
             else sr.setColor(Color.GREEN);
             sr.circle(node.x, node.y, 10F);
@@ -181,15 +187,14 @@ public class GameScreen extends ScreenAdapter {
 
     private void reset() {
         if (! history.isEmpty()) {
-            GameScreen.this.level = history.last();
-            history = List.empty();
+            GameScreen.this.level = history.firstElement();
+            history = new Stack<>();
         }
     }
 
     private void undo() {
         if (! history.isEmpty()) {
-            GameScreen.this.level = history.peek();
-            history = history.pop();
+            GameScreen.this.level = history.pop();
         }
     }
 

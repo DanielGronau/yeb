@@ -23,9 +23,8 @@ public class MainMenuScreen extends ScreenAdapter {
     public MainMenuScreen(YebGame game) {
         background = game.background;
         Skin skin = Skins.makeSkin(game.font, Color.BLUE);
-        Levels.LEVELS.zipWithIndex().forEach(tuple -> {
-            Level level = tuple._1;
-            int index = tuple._2;
+        for (int index = 0; index < Levels.LEVELS.size(); index++) {
+            Level level = Levels.LEVELS.get(index);
 
             TextButton button = new TextButton("Level " + (index + 1), skin);
             button.setPosition(100, 700 - 50 * index);
@@ -39,7 +38,7 @@ public class MainMenuScreen extends ScreenAdapter {
                 }
             });
             stage.addActor(button);
-        });
+        }
         Gdx.input.setInputProcessor(stage);
     }
 

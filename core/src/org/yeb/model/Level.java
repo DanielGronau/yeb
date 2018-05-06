@@ -1,15 +1,10 @@
 package org.yeb.model;
 
 import com.badlogic.gdx.math.Vector2;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.collection.HashSet;
-import io.vavr.collection.List;
-import io.vavr.collection.Set;
-import io.vavr.control.Option;
 
-import java.util.Collections;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Level {
 
@@ -27,62 +22,73 @@ public class Level {
     }
 
     public Node nodeById(int id) {
-        return nodes.find(node -> node.id == id).getOrElseThrow(() -> new RuntimeException("unknown id"));
+        return nodes.stream()
+                       .filter(node -> node.id == id)
+                       .findFirst()
+                       .orElseThrow(() -> new RuntimeException("unknown id"));
     }
 
-    private Tuple2<Node, Node> nodesOfEdge(Edge edge) {
-        return Tuple.of(nodeById(edge.id1), nodeById(edge.id2));
+    private Pair<Node, Node> nodesOfEdge(Edge edge) {
+        return Pair.of(nodeById(edge.id1), nodeById(edge.id2));
     }
 
     private float edgeLength(Edge edge) {
-        Tuple2<Node, Node> tuple = nodesOfEdge(edge);
+        Pair<Node, Node> tuple = nodesOfEdge(edge);
         float dx = tuple._1.x - tuple._2.x;
         float dy = tuple._1.y - tuple._2.y;
         return (float) Math.sqrt(dx * dx + dy * dy);
     }
 
-    public Option<Level> createEdge(int id1, int id2) {
-        if (id1 == id2 || edges.contains(new Edge(id1, id2))) return Option.none();
-        //TODO test for cycles
-        return Option.of(new Level(nodes, edges.add(new Edge(id1, id2)), winLength));
+    public Optional<Level> createEdge(int id1, int id2) {
+        if (id1 == id2 || edges.contains(new Edge(id1, id2))) return Optional.empty();
+        Set<Edge> newEdges = new HashSet<>(edges);
+        newEdges.add(new Edge(id1, id2));
+        Level newLevel = new Level(nodes, newEdges, winLength);
+        return newLevel.hasCycle() ? Optional.empty() : Optional.of(newLevel);
     }
 
-    public Tuple2<Level, Integer> splitEdge(Edge edge) {
-        Tuple2<Node, Node> nodes = nodesOfEdge(edge);
+    public Pair<Level, Integer> splitEdge(Edge edge) {
+        Pair<Node, Node> nodePair = nodesOfEdge(edge);
         Vector2 middle = middle(edge);
         int id = newId();
         Node node = new Node(id, middle.x, middle.y, false);
-        Set<Node> newNodes = this.nodes.add(node);
-        Edge edge1 = new Edge(nodes._1.id, id);
-        Edge edge2 = new Edge(nodes._2.id, id);
-        Set<Edge> newEdges = edges.remove(edge).add(edge1).add(edge2);
-        return Tuple.of(new Level(newNodes, newEdges, winLength), id);
+        Set<Node> newNodes = new HashSet<>(nodes);
+        newNodes.add(node);
+        Edge edge1 = new Edge(nodePair._1.id, id);
+        Edge edge2 = new Edge(nodePair._2.id, id);
+        Set<Edge> newEdges = new HashSet<>(edges);
+        newEdges.remove(edge);
+        newEdges.add(edge1);
+        newEdges.add(edge2);
+        return Pair.of(new Level(newNodes, newEdges, winLength), id);
     }
 
     public Vector2 middle(Edge edge) {
-        Tuple2<Node, Node> nodes = nodesOfEdge(edge);
+        Pair<Node, Node> nodes = nodesOfEdge(edge);
         return new Vector2((nodes._1.x + nodes._2.x) / 2F, (nodes._1.y + nodes._2.y) / 2F);
     }
 
     private int newId() {
-        return 1 + nodes.map(node -> node.id).reduce(Math::max);
+        return 1 + nodes.stream().map(node -> node.id).reduce(Math::max).orElse(0);
     }
 
     public float totalEdgeLength() {
-        return edges.toList().map(this::edgeLength).fold(0F, (a, b) -> a + b);
+        return edges.stream().map(this::edgeLength).reduce(0F, (a, b) -> a + b);
     }
 
     public Level wiggle() {
-        java.util.List<Node> javaNodes = this.nodes.filter(node -> !node.leaf).toJavaList();
-        if (!javaNodes.isEmpty()) {
-            Collections.shuffle(javaNodes);
-            Node node = javaNodes.get(0);
+        List<Node> innerNodes = nodes.stream().filter(node -> !node.leaf).collect(Collectors.toList());
+        if (!innerNodes.isEmpty()) {
+            Collections.shuffle(innerNodes);
+            Node node = innerNodes.get(0);
             float oldDist = totalEdgeLength();
             Node newNode = new Node(node.id,
                     node.x + random.nextInt(21) - 10,
                     node.y + random.nextInt(21) - 10,
                     false);
-            Set<Node> newSet = nodes.filter(n -> n.id != node.id).add(newNode);
+            Set<Node> newSet = new HashSet<>(nodes);
+            newSet.removeIf(n -> n.id == node.id);
+            newSet.add(newNode);
             Level newLevel = new Level(newSet, edges, winLength);
             float newDist = newLevel.totalEdgeLength();
             if (newDist < oldDist) return newLevel;
@@ -91,27 +97,49 @@ public class Level {
     }
 
     public boolean allConnected() {
-        Set<Integer> done = HashSet.of(nodes.head().id);
-        Set<Integer> todo = nodes.tail().map(node -> node.id);
+        List<Node> nodeList = new ArrayList<>(nodes);
+        Set<Integer> done = new HashSet<>();
+        done.add(nodeList.get(0).id);
+        Set<Integer> todo = nodeList.subList(1, nodeList.size()).stream().map(node -> node.id).collect(Collectors.toSet());
         Set<Edge> unused = edges;
         Set<Edge> connected;
         do {
             Set<Integer> doneCopy = done;
             Set<Integer> todoCopy = todo;
             //throw away edges between done nodes
-            unused = unused.filter(edge -> !doneCopy.contains(edge.id1) || !doneCopy.contains(edge.id2));
+            unused = unused.stream().filter(edge -> !doneCopy.contains(edge.id1) || !doneCopy.contains(edge.id2)).collect(Collectors.toSet());
             //remaining edges with done endpoint must connect to a to-do node
-            connected = unused.filter(edge -> doneCopy.contains(edge.id1) || doneCopy.contains(edge.id2));
-            Set<Integer> nodesToMove = connected.flatMap(edge -> List.of(edge.id1, edge.id2).filter(todoCopy::contains));
-            done = done.addAll(nodesToMove);
-            todo = todo.removeAll(nodesToMove);
-            unused = unused.removeAll(connected);
+            connected = unused.stream().filter(edge -> doneCopy.contains(edge.id1) || doneCopy.contains(edge.id2)).collect(Collectors.toSet());
+            Set<Integer> nodesToMove =
+                    connected.stream()
+                            .flatMap(edge -> Stream.of(edge.id1, edge.id2).filter(todoCopy::contains))
+                            .collect(Collectors.toSet());
+            done.addAll(nodesToMove);
+            todo.removeAll(nodesToMove);
+            unused.removeAll(connected);
         } while (!connected.isEmpty());
         return todo.isEmpty();
     }
 
+    public boolean hasCycle() {
+       List<Set<Integer>> sets = nodes.stream().map(node -> Collections.singleton(node.id)).collect(Collectors.toList());
+       for(Edge edge : edges) {
+           Set<Integer> set1 = sets.stream().filter(set -> set.contains(edge.id1)).findFirst().get();
+           Set<Integer> set2 = sets.stream().filter(set -> set.contains(edge.id2)).findFirst().get();
+           if (set1 == set2) {
+               return true;
+           }
+           Set<Integer> newSet = new HashSet<>(set1);
+           newSet.addAll(set2);
+           sets.remove(set1);
+           sets.remove(set2);
+           sets.add(newSet);
+       }
+       return false;
+    }
+
     public static class Builder {
-        private Set<Node> nodes = HashSet.empty();
+        private Set<Node> nodes = new HashSet<>();
         private final float winLength;
         private int index = 1;
 
@@ -120,12 +148,12 @@ public class Level {
         }
 
         public Builder node(float x, float y) {
-            nodes = nodes.add(new Node(index++, x, y, true));
+            nodes.add(new Node(index++, x, y, true));
             return this;
         }
 
         public Level build() {
-            return new Level(nodes, HashSet.empty(), winLength);
+            return new Level(nodes, new HashSet<>(), winLength);
         }
     }
 }

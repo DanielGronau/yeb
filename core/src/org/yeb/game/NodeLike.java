@@ -1,17 +1,17 @@
 package org.yeb.game;
 
 import com.badlogic.gdx.math.Vector2;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.control.Option;
 import org.yeb.model.Edge;
 import org.yeb.model.Level;
 import org.yeb.model.Node;
+import org.yeb.model.Pair;
+
+import java.util.Optional;
 
 public interface NodeLike {
     Node asNode(Level level);
-    Tuple2<Level, Integer> withNode(Level level);
-    Option<Edge> asEdge();
+    Pair<Level, Integer> withNode(Level level);
+    Optional<Edge> asEdge();
 
     static NodeLike ofEdge(Edge edge){
         return new NodeLike() {
@@ -22,13 +22,13 @@ public interface NodeLike {
             }
 
             @Override
-            public Tuple2<Level, Integer> withNode(Level level) {
+            public Pair<Level, Integer> withNode(Level level) {
                 return level.splitEdge(edge);
             }
 
             @Override
-            public Option<Edge> asEdge() {
-                return Option.of(edge);
+            public Optional<Edge> asEdge() {
+                return Optional.of(edge);
             }
         };
     }
@@ -41,13 +41,13 @@ public interface NodeLike {
             }
 
             @Override
-            public Tuple2<Level, Integer> withNode(Level level) {
-                return Tuple.of(level, id);
+            public Pair<Level, Integer> withNode(Level level) {
+                return Pair.of(level, id);
             }
 
             @Override
-            public Option<Edge> asEdge() {
-                return Option.none();
+            public Optional<Edge> asEdge() {
+                return Optional.empty();
             }
         };
     }
