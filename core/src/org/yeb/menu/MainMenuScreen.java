@@ -4,6 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -18,6 +20,8 @@ public class MainMenuScreen extends ScreenAdapter {
 
     private final Stage stage = new Stage();
     private final Color background;
+    private final Texture title = new Texture("yeb_title.png");
+    private final SpriteBatch batch = new SpriteBatch();
 
 
     public MainMenuScreen(YebGame game) {
@@ -27,7 +31,7 @@ public class MainMenuScreen extends ScreenAdapter {
             Level level = Levels.LEVELS.get(index);
 
             TextButton button = new TextButton("Level " + (index + 1), skin);
-            button.setPosition(100, 700 - 50 * index);
+            button.setPosition(100, 500 - 50 * index);
             button.addListener(new InputListener() {
 
                 @Override
@@ -42,10 +46,16 @@ public class MainMenuScreen extends ScreenAdapter {
         Gdx.input.setInputProcessor(stage);
     }
 
+
+
     @Override
     public void render(float delta) {
         Gdx.gl.glClearColor(background.r, background.g, background.b, background.a);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        batch.begin();
+        batch.draw(title, 100, 650);
+        batch.end();
 
         stage.act();
         stage.draw();
