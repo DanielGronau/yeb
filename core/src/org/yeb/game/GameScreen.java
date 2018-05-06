@@ -187,7 +187,7 @@ public class GameScreen extends ScreenAdapter {
 
     private void reset() {
         if (! history.isEmpty()) {
-            GameScreen.this.level = history.lastElement();
+            GameScreen.this.level = history.firstElement();
             history = new Stack<>();
         }
     }
