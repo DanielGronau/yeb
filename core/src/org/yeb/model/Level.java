@@ -38,7 +38,7 @@ public class Level {
     private float edgeLength(Edge edge) {
         Node first = edgeNode1(edge);
         Node second = edgeNode2(edge);
-        return new Vector2(first.x, first.y).dst(second.x, second.y);
+        return first.pos.dst(second.pos);
     }
 
     public Optional<Level> createEdge(int id1, int id2) {
@@ -51,7 +51,7 @@ public class Level {
 
     public Pair<Level, Integer> splitEdge(Edge edge) {
         Vector2 middle = middle(edge);
-        Node node = new Node(newId(), middle.x, middle.y, false);
+        Node node = new Node(newId(), middle, false);
         Set<Node> newNodes = new HashSet<>(nodes);
         newNodes.add(node);
         Edge edge1 = new Edge(edge.id1, node.id);
@@ -66,7 +66,7 @@ public class Level {
     public Vector2 middle(Edge edge) {
         Node first = edgeNode1(edge);
         Node second = edgeNode2(edge);
-        return new Vector2((first.x + second.x) / 2F, (first.y + second.y) / 2F);
+        return new Vector2(first.pos).add(second.pos).scl(0.5F);
     }
 
     private int newId() {
@@ -83,10 +83,8 @@ public class Level {
             Collections.shuffle(innerNodes);
             Node node = innerNodes.get(0);
             float oldDist = totalEdgeLength();
-            Node newNode = new Node(node.id,
-                    node.x + random.nextInt(21) - 10,
-                    node.y + random.nextInt(21) - 10,
-                    false);
+            Vector2 rnd = new Vector2(random.nextInt(21) - 10, random.nextInt(21) - 10);
+            Node newNode = new Node(node.id, rnd.add(node.pos), false);
             Set<Node> newSet = new HashSet<>(nodes);
             newSet.removeIf(n -> n.id == node.id);
             newSet.add(newNode);
@@ -103,7 +101,7 @@ public class Level {
 
     private boolean allNodesConnected() {
         List<Set<Integer>> sets = singletonNodeIdSets();
-        for(Edge edge : edges) {
+        for (Edge edge : edges) {
             Set<Integer> set1 = findSet(sets, edge.id1);
             Set<Integer> set2 = findSet(sets, edge.id2);
             if (set1 == set2) {
@@ -115,16 +113,16 @@ public class Level {
     }
 
     private boolean hasCycle() {
-       List<Set<Integer>> sets = singletonNodeIdSets();
-       for(Edge edge : edges) {
-           Set<Integer> set1 = findSet(sets, edge.id1);
-           Set<Integer> set2 = findSet(sets, edge.id2);
-           if (set1 == set2) {
-               return true;
-           }
-           mergeSets(sets, set1, set2);
-       }
-       return false;
+        List<Set<Integer>> sets = singletonNodeIdSets();
+        for (Edge edge : edges) {
+            Set<Integer> set1 = findSet(sets, edge.id1);
+            Set<Integer> set2 = findSet(sets, edge.id2);
+            if (set1 == set2) {
+                return true;
+            }
+            mergeSets(sets, set1, set2);
+        }
+        return false;
     }
 
     private List<Set<Integer>> singletonNodeIdSets() {
@@ -153,12 +151,21 @@ public class Level {
         }
 
         public Builder node(float x, float y) {
-            nodes.add(new Node(index++, x, y, true));
+            nodes.add(new Node(index++, new Vector2(x, y), true));
             return this;
         }
 
         public Level build() {
             return new Level(nodes, new HashSet<>(), winLength);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "Level{" +
+                       "nodes=" + nodes +
+                       ", edges=" + edges +
+                       ", winLength=" + winLength +
+                       '}';
     }
 }

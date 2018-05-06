@@ -22,7 +22,7 @@ interface Joint {
             @Override
             public Node asNode(Level level) {
                 Vector2 middle = level.middle(edge);
-                return new Node(0, middle.x, middle.y, false);
+                return new Node(0, middle, false);
             }
 
             @Override
