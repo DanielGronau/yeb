@@ -4,17 +4,21 @@ import com.badlogic.gdx.math.Vector2;
 import org.yeb.model.Edge;
 import org.yeb.model.Level;
 import org.yeb.model.Node;
-import org.yeb.model.Pair;
+import org.yeb.util.Pair;
 
 import java.util.Optional;
 
-public interface NodeLike {
+/**
+ * A joint is a clickable (and with other joints connectable) part of the net,
+ * which may be a node of the level, or an edge center.
+ */
+interface Joint {
     Node asNode(Level level);
     Pair<Level, Integer> withNode(Level level);
     Optional<Edge> asEdge();
 
-    static NodeLike ofEdge(Edge edge){
-        return new NodeLike() {
+    static Joint ofEdge(Edge edge){
+        return new Joint() {
             @Override
             public Node asNode(Level level) {
                 Vector2 middle = level.middle(edge);
@@ -33,8 +37,8 @@ public interface NodeLike {
         };
     }
 
-    static NodeLike ofNodeId(int id) {
-        return new NodeLike() {
+    static Joint ofNodeId(int id) {
+        return new Joint() {
             @Override
             public Node asNode(Level level) {
                 return level.nodeById(id);
@@ -51,5 +55,4 @@ public interface NodeLike {
             }
         };
     }
-
 }

@@ -1,10 +1,10 @@
 package org.yeb.model;
 
 import com.badlogic.gdx.math.Vector2;
+import org.yeb.util.Pair;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Level {
 
@@ -13,7 +13,6 @@ public class Level {
     public final Set<Node> nodes;
     public final Set<Edge> edges;
     public final float winLength;
-
 
     public Level(Set<Node> nodes, Set<Edge> edges, float winLength) {
         this.nodes = nodes;
@@ -28,15 +27,18 @@ public class Level {
                        .orElseThrow(() -> new RuntimeException("unknown id"));
     }
 
-    private Pair<Node, Node> nodesOfEdge(Edge edge) {
-        return Pair.of(nodeById(edge.id1), nodeById(edge.id2));
+    private Node edgeNode1(Edge edge) {
+        return nodeById(edge.id1);
+    }
+
+    private Node edgeNode2(Edge edge) {
+        return nodeById(edge.id2);
     }
 
     private float edgeLength(Edge edge) {
-        Pair<Node, Node> tuple = nodesOfEdge(edge);
-        float dx = tuple._1.x - tuple._2.x;
-        float dy = tuple._1.y - tuple._2.y;
-        return (float) Math.sqrt(dx * dx + dy * dy);
+        Node first = edgeNode1(edge);
+        Node second = edgeNode2(edge);
+        return new Vector2(first.x, first.y).dst(second.x, second.y);
     }
 
     public Optional<Level> createEdge(int id1, int id2) {
@@ -48,24 +50,23 @@ public class Level {
     }
 
     public Pair<Level, Integer> splitEdge(Edge edge) {
-        Pair<Node, Node> nodePair = nodesOfEdge(edge);
         Vector2 middle = middle(edge);
-        int id = newId();
-        Node node = new Node(id, middle.x, middle.y, false);
+        Node node = new Node(newId(), middle.x, middle.y, false);
         Set<Node> newNodes = new HashSet<>(nodes);
         newNodes.add(node);
-        Edge edge1 = new Edge(nodePair._1.id, id);
-        Edge edge2 = new Edge(nodePair._2.id, id);
+        Edge edge1 = new Edge(edge.id1, node.id);
+        Edge edge2 = new Edge(edge.id2, node.id);
         Set<Edge> newEdges = new HashSet<>(edges);
         newEdges.remove(edge);
         newEdges.add(edge1);
         newEdges.add(edge2);
-        return Pair.of(new Level(newNodes, newEdges, winLength), id);
+        return Pair.of(new Level(newNodes, newEdges, winLength), node.id);
     }
 
     public Vector2 middle(Edge edge) {
-        Pair<Node, Node> nodes = nodesOfEdge(edge);
-        return new Vector2((nodes._1.x + nodes._2.x) / 2F, (nodes._1.y + nodes._2.y) / 2F);
+        Node first = edgeNode1(edge);
+        Node second = edgeNode2(edge);
+        return new Vector2((first.x + second.x) / 2F, (first.y + second.y) / 2F);
     }
 
     private int newId() {
@@ -96,46 +97,50 @@ public class Level {
         return this;
     }
 
-    public boolean allConnected() {
-        List<Node> nodeList = new ArrayList<>(nodes);
-        Set<Integer> done = new HashSet<>();
-        done.add(nodeList.get(0).id);
-        Set<Integer> todo = nodeList.subList(1, nodeList.size()).stream().map(node -> node.id).collect(Collectors.toSet());
-        Set<Edge> unused = edges;
-        Set<Edge> connected;
-        do {
-            Set<Integer> doneCopy = done;
-            Set<Integer> todoCopy = todo;
-            //throw away edges between done nodes
-            unused = unused.stream().filter(edge -> !doneCopy.contains(edge.id1) || !doneCopy.contains(edge.id2)).collect(Collectors.toSet());
-            //remaining edges with done endpoint must connect to a to-do node
-            connected = unused.stream().filter(edge -> doneCopy.contains(edge.id1) || doneCopy.contains(edge.id2)).collect(Collectors.toSet());
-            Set<Integer> nodesToMove =
-                    connected.stream()
-                            .flatMap(edge -> Stream.of(edge.id1, edge.id2).filter(todoCopy::contains))
-                            .collect(Collectors.toSet());
-            done.addAll(nodesToMove);
-            todo.removeAll(nodesToMove);
-            unused.removeAll(connected);
-        } while (!connected.isEmpty());
-        return todo.isEmpty();
+    public boolean hasWon() {
+        return totalEdgeLength() < winLength && allNodesConnected();
     }
 
-    public boolean hasCycle() {
-       List<Set<Integer>> sets = nodes.stream().map(node -> Collections.singleton(node.id)).collect(Collectors.toList());
+    private boolean allNodesConnected() {
+        List<Set<Integer>> sets = singletonNodeIdSets();
+        for(Edge edge : edges) {
+            Set<Integer> set1 = findSet(sets, edge.id1);
+            Set<Integer> set2 = findSet(sets, edge.id2);
+            if (set1 == set2) {
+                continue;
+            }
+            mergeSets(sets, set1, set2);
+        }
+        return sets.size() == 1;
+    }
+
+    private boolean hasCycle() {
+       List<Set<Integer>> sets = singletonNodeIdSets();
        for(Edge edge : edges) {
-           Set<Integer> set1 = sets.stream().filter(set -> set.contains(edge.id1)).findFirst().get();
-           Set<Integer> set2 = sets.stream().filter(set -> set.contains(edge.id2)).findFirst().get();
+           Set<Integer> set1 = findSet(sets, edge.id1);
+           Set<Integer> set2 = findSet(sets, edge.id2);
            if (set1 == set2) {
                return true;
            }
-           Set<Integer> newSet = new HashSet<>(set1);
-           newSet.addAll(set2);
-           sets.remove(set1);
-           sets.remove(set2);
-           sets.add(newSet);
+           mergeSets(sets, set1, set2);
        }
        return false;
+    }
+
+    private List<Set<Integer>> singletonNodeIdSets() {
+        return nodes.stream().map(node -> Collections.singleton(node.id)).collect(Collectors.toList());
+    }
+
+    private Set<Integer> findSet(List<Set<Integer>> sets, int id) {
+        return sets.stream().filter(set -> set.contains(id)).findFirst().get();
+    }
+
+    private void mergeSets(List<Set<Integer>> sets, Set<Integer> set1, Set<Integer> set2) {
+        Set<Integer> newSet = new HashSet<>(set1);
+        newSet.addAll(set2);
+        sets.remove(set1);
+        sets.remove(set2);
+        sets.add(newSet);
     }
 
     public static class Builder {

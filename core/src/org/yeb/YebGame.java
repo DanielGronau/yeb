@@ -4,7 +4,7 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import org.yeb.menu.MainMenuScreen;
+import org.yeb.menu.MenuScreen;
 
 public class YebGame extends Game {
     public SpriteBatch batch;
@@ -16,7 +16,7 @@ public class YebGame extends Game {
         batch = new SpriteBatch();
         //Use LibGDX's default Arial font.
         font = new BitmapFont();
-        this.setScreen(new MainMenuScreen(this));
+        this.setScreen(new MenuScreen(this));
     }
 
     @Override

@@ -6,33 +6,36 @@ import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import org.yeb.YebGame;
-import org.yeb.menu.MainMenuScreen;
+import org.yeb.menu.MenuScreen;
+import org.yeb.model.Edge;
 import org.yeb.model.Level;
 import org.yeb.model.Node;
-import org.yeb.model.Pair;
-import org.yeb.util.Skins;
+import org.yeb.util.Optionals;
+import org.yeb.util.Pair;
+import org.yeb.util.UiHelper;
 
-import java.util.List;
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.Stack;
 
+import static org.yeb.util.UiHelper.makeButton;
 
 public class GameScreen extends ScreenAdapter {
 
-    private Optional<NodeLike> marked = Optional.empty();
+    private static final float JOINT_RADIUS = 15F;
+
     private final YebGame game;
     private final OrthographicCamera camera = new OrthographicCamera();
-    private boolean win = false;
+    private final Stage stage = new Stage();
+    private final Texture levelSolved = new Texture("level_solved.png");
+
     private Level level;
     private Stack<Level> history = new Stack<>();
-
-    private Stage stage = new Stage();
+    private Optional<Joint> marked = Optional.empty();
+    private boolean win = false;
 
     public GameScreen(YebGame game, Level level) {
         this.game = game;
@@ -40,39 +43,14 @@ public class GameScreen extends ScreenAdapter {
         camera.setToOrtho(false, 1000F, 800F);
 
         InputMultiplexer inputMultiplexer = new InputMultiplexer();
-        inputMultiplexer.addProcessor(new InputAdapter() {
-            @Override
-            public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-                if (win) {
-                    toMenuScreen();
-                    return true;
-                }
-                return mouseDown(screenX, screenY, button);
-            }
-        });
+        inputMultiplexer.addProcessor(gameInput());
         inputMultiplexer.addProcessor(stage);
         Gdx.input.setInputProcessor(inputMultiplexer);
 
-        Skin skin = Skins.makeSkin(game.font, Color.GRAY);
+        Skin skin = UiHelper.makeSkin(game.font, Color.GRAY);
         stage.addActor(makeButton(skin, "Resign", 50, 20, this::toMenuScreen));
         stage.addActor(makeButton(skin, "Reset", 150, 20, this::reset));
         stage.addActor(makeButton(skin, "Undo", 250, 20, this::undo));
-
-    }
-
-    private TextButton makeButton(Skin skin, String caption, int x, int y, Runnable action) {
-        TextButton button = new TextButton(caption, skin);
-        button.setPosition(x, y);
-        button.addListener(new InputListener() {
-            @Override
-            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                if (button == Input.Buttons.LEFT) {
-                    action.run();
-                }
-                return true;
-            }
-        });
-        return button;
     }
 
     private boolean mouseDown(int x, int y, int button) {
@@ -81,42 +59,47 @@ public class GameScreen extends ScreenAdapter {
         }
         Vector3 touchPos = new Vector3(x, y, 0F);
         camera.unproject(touchPos);
-        return level.nodes
-                       .stream()
-                       .filter(node -> touchPos.dst(node.x, node.y, 0F) < 10F)
+        return Optionals.or(pickedNodeJoint(touchPos), () -> pickedEdgeJoint(touchPos))
+                       .map(pickedJoint ->
+                                    marked = marked.map(markedJoint -> {
+                                        tryToCreateEdge(pickedJoint, markedJoint);
+                                        return Optional.<Joint>empty();
+                                    }).orElseGet(() -> Optional.of(pickedJoint)))
+                       .isPresent();
+    }
+
+    private void tryToCreateEdge(Joint picked, Joint marked) {
+        Pair<Level, Integer> tuple1 = picked.withNode(level);
+        Level levelWithEdge1 = tuple1._1;
+        Pair<Level, Integer> tuple2 = marked.withNode(levelWithEdge1);
+        Level levelWithEdge2 = tuple2._1;
+        levelWithEdge2.createEdge(tuple1._2, tuple2._2).ifPresent(newLevel -> {
+            history.push(level);
+            level = newLevel;
+        });
+    }
+
+    private Optional<Joint> pickedNodeJoint(Vector3 touchPos) {
+        return level.nodes.stream()
+                       .filter(node -> touchPos.dst(node.x, node.y, 0F) < JOINT_RADIUS)
                        .findFirst()
-                       .map(node -> NodeLike.ofNodeId(node.id))
-                       .map(Optional::of)
-                       .orElseGet(() -> level.edges.stream().filter(
-                               edge -> {
-                                   Vector2 middle = level.middle(edge);
-                                   return touchPos.dst(middle.x, middle.y, 0F) < 10F;
-                               }).findFirst()
-                               .map(NodeLike::ofEdge))
-                       .map(picked -> {
-                           if (! marked.isPresent()) {
-                               marked = Optional.of(picked);
-                           } else {
-                               Pair<Level, Integer> tuple1 = picked.withNode(level);
-                               Level levelWithEdge1 = tuple1._1;
-                               Pair<Level, Integer> tuple2 = marked.get().withNode(levelWithEdge1);
-                               Level levelWithEdge2 = tuple2._1;
-                               levelWithEdge2.createEdge(tuple1._2, tuple2._2).ifPresent(newLevel -> {
-                                   history.push(level);
-                                   level = newLevel;
-                               });
-                               marked = Optional.empty();
-                           }
-                           return true;
+                       .map(node -> Joint.ofNodeId(node.id));
+    }
+
+    private Optional<Joint> pickedEdgeJoint(Vector3 touchPos) {
+        return level.edges.stream()
+                       .filter(edge -> {
+                           Vector2 middle = level.middle(edge);
+                           return touchPos.dst(middle.x, middle.y, 0F) < JOINT_RADIUS;
                        })
-                       .orElse(false);
+                       .findFirst()
+                       .map(Joint::ofEdge);
     }
 
     @Override
     public void render(float delta) {
         level = level.wiggle();
-        float totalEdgeLength = level.totalEdgeLength();
-        win = totalEdgeLength < level.winLength && level.allConnected();
+        win = level.hasWon();
 
         Color background = game.background;
         Gdx.gl.glClearColor(background.r, background.g, background.b, background.a);
@@ -125,12 +108,9 @@ public class GameScreen extends ScreenAdapter {
         camera.update();
 
         game.batch.setProjectionMatrix(camera.combined);
-
         game.batch.begin();
         game.font.setColor(Color.DARK_GRAY);
-        game.font.draw(game.batch,
-                "Winning distance: " + level.winLength + ", current distance: " + totalEdgeLength,
-                10F, 780F);
+        game.font.draw(game.batch, distanceFeedback(), 10F, 780F);
         game.batch.end();
 
         ShapeRenderer sr = new ShapeRenderer();
@@ -144,58 +124,86 @@ public class GameScreen extends ScreenAdapter {
             sr.setColor(Color.BLACK);
             sr.rectLine(n1.x, n1.y, n2.x, n2.y, 6F);
             Vector2 middle = level.middle(edge);
-            sr.setColor(marked.flatMap(m -> m.asEdge().map(e -> e == edge)).orElse(false)
-                                ? Color.RED
-                                : Color.PURPLE);
-            sr.circle(middle.x, middle.y, 10F);
+            sr.setColor(edgeJointColor(edge));
+            sr.circle(middle.x, middle.y, JOINT_RADIUS);
         });
         level.nodes.forEach(node -> {
-            if (marked.map(m -> node.id == m.asNode(level).id).orElse(false)) sr.setColor(Color.RED);
-            else if (node.leaf) sr.setColor(Color.BLUE);
-            else sr.setColor(Color.GREEN);
-            sr.circle(node.x, node.y, 10F);
+            sr.setColor(nodeJointColor(node));
+            sr.circle(node.x, node.y, JOINT_RADIUS);
         });
         sr.end();
 
         if (win) {
-            Pixmap pixmap = new Pixmap(70, 30, Pixmap.Format.RGBA8888);
-            pixmap.setColor(new Color(1F,0F,0F,0.3F));
-            pixmap.fill();
-
             game.batch.begin();
-            game.batch.draw(new Texture(pixmap), 400, 300, 200, 200);
-            game.font.setColor(Color.WHITE);
-            game.font.draw(game.batch,
-                    "Level Solved!",
-                    450F, 410F);
+            game.batch.draw(levelSolved, 500 - levelSolved.getWidth()/2, 400 - levelSolved.getHeight()/2);
             game.batch.end();
-        }
-
-        if (Gdx.input.isKeyPressed(Keys.ESCAPE) ||
-                    (win && Gdx.input.isKeyPressed(Keys.ENTER))) {
-            toMenuScreen();
         }
 
         stage.act();
         stage.draw();
     }
 
+    private Color nodeJointColor(Node node) {
+        if (marked.filter(m -> node.id == m.asNode(level).id).isPresent()) {
+            return Color.RED;
+        } else if (node.leaf) {
+            return Color.BLUE;
+        } else {
+            return Color.GREEN;
+        }
+    }
+
+    private Color edgeJointColor(Edge edge) {
+        return marked.flatMap(m -> m.asEdge().filter(e -> e == edge)).isPresent()
+                ? Color.RED
+                : Color.PURPLE;
+    }
+
+    private String distanceFeedback() {
+        //No String.format in GWT :(
+        BigDecimal bd = new BigDecimal(Float.toString(level.totalEdgeLength()))
+                                .setScale(2, BigDecimal.ROUND_HALF_UP);
+        return "Winning distance: " + level.winLength + ", current distance: " + bd.doubleValue();
+    }
+
     private void toMenuScreen() {
-        game.setScreen(new MainMenuScreen(game));
+        game.setScreen(new MenuScreen(game));
         dispose();
     }
 
     private void reset() {
-        if (! history.isEmpty()) {
+        if (!history.isEmpty()) {
             GameScreen.this.level = history.firstElement();
             history = new Stack<>();
         }
     }
 
     private void undo() {
-        if (! history.isEmpty()) {
+        if (!history.isEmpty()) {
             GameScreen.this.level = history.pop();
         }
+    }
+
+    private InputAdapter gameInput() {
+        return new InputAdapter() {
+            @Override
+            public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+                if (win) {
+                    toMenuScreen();
+                    return true;
+                }
+                return mouseDown(screenX, screenY, button);
+            }
+
+            @Override
+            public boolean keyDown(int keycode) {
+                if (keycode == Keys.ESCAPE || (win && keycode == Keys.ENTER)) {
+                    toMenuScreen();
+                    return true;
+                }
+                return false;
+            }
+        };
     }
 
 

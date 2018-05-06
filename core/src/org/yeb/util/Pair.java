@@ -1,4 +1,4 @@
-package org.yeb.model;
+package org.yeb.util;
 
 public class Pair<A, B> {
     public final A _1;
