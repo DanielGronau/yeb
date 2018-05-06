@@ -41,10 +41,10 @@ public class Level {
 
     public Optional<Level> createEdge(int id1, int id2) {
         if (id1 == id2 || edges.contains(new Edge(id1, id2))) return Optional.empty();
-        //TODO test for cycles
         Set<Edge> newEdges = new HashSet<>(edges);
         newEdges.add(new Edge(id1, id2));
-        return Optional.of(new Level(nodes, newEdges, winLength));
+        Level newLevel = new Level(nodes, newEdges, winLength);
+        return newLevel.hasCycle() ? Optional.empty() : Optional.of(newLevel);
     }
 
     public Pair<Level, Integer> splitEdge(Edge edge) {
@@ -119,6 +119,23 @@ public class Level {
             unused.removeAll(connected);
         } while (!connected.isEmpty());
         return todo.isEmpty();
+    }
+
+    public boolean hasCycle() {
+       List<Set<Integer>> sets = nodes.stream().map(node -> Collections.singleton(node.id)).collect(Collectors.toList());
+       for(Edge edge : edges) {
+           Set<Integer> set1 = sets.stream().filter(set -> set.contains(edge.id1)).findFirst().get();
+           Set<Integer> set2 = sets.stream().filter(set -> set.contains(edge.id2)).findFirst().get();
+           if (set1 == set2) {
+               return true;
+           }
+           Set<Integer> newSet = new HashSet<>(set1);
+           newSet.addAll(set2);
+           sets.remove(set1);
+           sets.remove(set2);
+           sets.add(newSet);
+       }
+       return false;
     }
 
     public static class Builder {
