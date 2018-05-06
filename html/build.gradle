@@ -3,6 +3,13 @@ import de.richsource.gradle.plugins.gwt.GwtSuperDev
 apply plugin: "java"
 apply plugin: "jetty"
 
+jettyRunWar.stopPort = 8080
+jettyRunWar.stopKey = 'stopKey'
+jettyStop.stopPort = 8080
+jettyStop.stopKey = 'stopKey'
+jettyRun.stopPort = 8080
+jettyRun.stopKey = 'stopKey'
+
 gwt {
     gwtVersion='2.8.0' // Should match the gwt version used for building the gwt backend
     maxHeapSize="1G" // Default 256m is not enough for gwt compiler. GWT is HUNGRY

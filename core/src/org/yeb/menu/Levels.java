@@ -1,11 +1,13 @@
 package org.yeb.menu;
 
-import io.vavr.collection.List;
 import org.yeb.model.Level;
+
+import java.util.Arrays;
+import java.util.List;
 
 class Levels {
 
-    static List<Level> LEVELS = List.of(
+    static List<Level> LEVELS = Arrays.asList(
             new Level.Builder(1840F)
                     .node(100F, 100F)
                     .node(900F, 100F)
@@ -19,6 +21,5 @@ class Levels {
                     .node(100F, 400F)
                     .node(900F, 400F).build()
     );
-
 
 }
