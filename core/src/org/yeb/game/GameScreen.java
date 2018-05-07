@@ -2,7 +2,10 @@ package org.yeb.game;
 
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.graphics.*;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL30;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -113,15 +116,30 @@ public class GameScreen extends ScreenAdapter {
         game.font.draw(game.batch, distanceFeedback(), 10F, 780F);
         game.batch.end();
 
+        renderLevel();
+
+        if (win) {
+            game.batch.begin();
+            game.batch.draw(levelSolved, 500 - levelSolved.getWidth() / 2, 400 - levelSolved.getHeight() / 2);
+            game.batch.end();
+        }
+
+        stage.act();
+        stage.draw();
+    }
+
+    private void renderLevel() {
         ShapeRenderer sr = new ShapeRenderer();
         sr.setAutoShapeType(true);
         sr.setProjectionMatrix(camera.combined);
 
         sr.begin(ShapeRenderer.ShapeType.Filled);
+        sr.setColor(Color.GRAY);
+        level.obstacles.forEach(obstacle -> obstacle.render(sr));
         level.edges.forEach(edge -> {
             Node n1 = level.nodeById(edge.id1);
             Node n2 = level.nodeById(edge.id2);
-            sr.setColor(Color.BLACK);
+            sr.setColor(level.edgeIntersectsObstacle(edge) ? Color.ORANGE : Color.BLACK);
             sr.rectLine(n1.pos, n2.pos, 6F);
             Vector2 middle = level.middle(edge);
             sr.setColor(edgeJointColor(edge));
@@ -132,15 +150,6 @@ public class GameScreen extends ScreenAdapter {
             sr.circle(node.pos.x, node.pos.y, JOINT_RADIUS);
         });
         sr.end();
-
-        if (win) {
-            game.batch.begin();
-            game.batch.draw(levelSolved, 500 - levelSolved.getWidth()/2, 400 - levelSolved.getHeight()/2);
-            game.batch.end();
-        }
-
-        stage.act();
-        stage.draw();
     }
 
     private Color nodeJointColor(Node node) {
@@ -155,8 +164,8 @@ public class GameScreen extends ScreenAdapter {
 
     private Color edgeJointColor(Edge edge) {
         return marked.flatMap(m -> m.asEdge().filter(e -> e == edge)).isPresent()
-                ? Color.RED
-                : Color.PURPLE;
+                       ? Color.RED
+                       : Color.PURPLE;
     }
 
     private String distanceFeedback() {

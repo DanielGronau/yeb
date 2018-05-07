@@ -33,7 +33,10 @@ class Levels {
                     .node(800F, 700F)
                     .node(200F, 700F)
                     .node(100F, 400F)
-                    .node(900F, 400F).build()
+                    .node(900F, 400F)
+                    .circle(500,150,80)
+                    .circle(300,500,50)
+                    .circle(700,400,40).build()
     );
 
 }

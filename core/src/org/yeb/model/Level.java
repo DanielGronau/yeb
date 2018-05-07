@@ -1,5 +1,7 @@
 package org.yeb.model;
 
+import com.badlogic.gdx.math.Circle;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import org.yeb.util.Pair;
 
@@ -13,11 +15,17 @@ public class Level {
     public final Set<Node> nodes;
     public final Set<Edge> edges;
     public final float winLength;
+    public final List<Obstacle> obstacles;
 
-    public Level(Set<Node> nodes, Set<Edge> edges, float winLength) {
+    public Level(Set<Node> nodes, Set<Edge> edges, float winLength, List<Obstacle> obstacles) {
         this.nodes = nodes;
         this.edges = edges;
         this.winLength = winLength;
+        this.obstacles = obstacles;
+    }
+
+    private Level copy(Set<Node> newNodes, Set<Edge> newEdges) {
+        return new Level(newNodes, newEdges, winLength, obstacles);
     }
 
     public Node nodeById(int id) {
@@ -41,11 +49,21 @@ public class Level {
         return first.pos.dst(second.pos);
     }
 
+    public boolean edgeIntersectsObstacle(Edge edge) {
+        Node first = edgeNode1(edge);
+        Node second = edgeNode2(edge);
+        return obstacles.stream().anyMatch(obstacle -> obstacle.intersectsLine(first.pos, second.pos));
+    }
+
+    private boolean hasObstacleIntersections() {
+        return edges.stream().anyMatch(this::edgeIntersectsObstacle);
+    }
+
     public Optional<Level> createEdge(int id1, int id2) {
         if (id1 == id2 || edges.contains(new Edge(id1, id2))) return Optional.empty();
         Set<Edge> newEdges = new HashSet<>(edges);
         newEdges.add(new Edge(id1, id2));
-        Level newLevel = new Level(nodes, newEdges, winLength);
+        Level newLevel = copy(nodes, newEdges);
         return newLevel.hasCycle() ? Optional.empty() : Optional.of(newLevel);
     }
 
@@ -60,7 +78,7 @@ public class Level {
         newEdges.remove(edge);
         newEdges.add(edge1);
         newEdges.add(edge2);
-        return Pair.of(new Level(newNodes, newEdges, winLength), node.id);
+        return Pair.of(copy(newNodes, newEdges), node.id);
     }
 
     public Vector2 middle(Edge edge) {
@@ -88,7 +106,7 @@ public class Level {
             Set<Node> newSet = new HashSet<>(nodes);
             newSet.removeIf(n -> n.id == node.id);
             newSet.add(newNode);
-            Level newLevel = new Level(newSet, edges, winLength);
+            Level newLevel = copy(newSet, edges);
             float newDist = newLevel.totalEdgeLength();
             if (newDist < oldDist) return newLevel;
         }
@@ -96,7 +114,9 @@ public class Level {
     }
 
     public boolean hasWon() {
-        return totalEdgeLength() < winLength && allNodesConnected();
+        return totalEdgeLength() < winLength
+                       && allNodesConnected()
+                       && !hasObstacleIntersections();
     }
 
     private boolean allNodesConnected() {
@@ -143,6 +163,7 @@ public class Level {
 
     public static class Builder {
         private Set<Node> nodes = new HashSet<>();
+        private List<Obstacle> obstacles = new ArrayList<>();
         private final float winLength;
         private int index = 1;
 
@@ -155,8 +176,18 @@ public class Level {
             return this;
         }
 
+        public Builder rect(float x, float y, float w, float h) {
+            obstacles.add(Obstacle.of(new Rectangle(x, y, w, h)));
+            return this;
+        }
+
+        public Builder circle(float x, float y, float r) {
+            obstacles.add(Obstacle.of(new Circle(x, y, r)));
+            return this;
+        }
+
         public Level build() {
-            return new Level(nodes, new HashSet<>(), winLength);
+            return new Level(nodes, new HashSet<>(), winLength, obstacles);
         }
     }
 
