@@ -30,7 +30,6 @@ public class GameScreen extends ScreenAdapter {
 
     private static final float JOINT_RADIUS = 15F;
 
-    private final YebGame game;
     private final OrthographicCamera camera = new OrthographicCamera();
     private final Stage stage = new Stage();
     private final Texture levelSolved = new Texture("level_solved.png");
@@ -40,8 +39,7 @@ public class GameScreen extends ScreenAdapter {
     private Optional<Joint> marked = Optional.empty();
     private boolean win = false;
 
-    public GameScreen(YebGame game, Level level) {
-        this.game = game;
+    public GameScreen(Level level) {
         this.level = level;
         camera.setToOrtho(false, 1000F, 800F);
 
@@ -50,7 +48,7 @@ public class GameScreen extends ScreenAdapter {
         inputMultiplexer.addProcessor(stage);
         Gdx.input.setInputProcessor(inputMultiplexer);
 
-        Skin skin = UiHelper.makeSkin(game.font, Color.GRAY);
+        Skin skin = UiHelper.makeSkin(YebGame.instance().font, Color.GRAY);
         stage.addActor(makeButton(skin, "Resign", 50, 20, this::toMenuScreen));
         stage.addActor(makeButton(skin, "Reset", 150, 20, this::reset));
         stage.addActor(makeButton(skin, "Undo", 250, 20, this::undo));
@@ -101,6 +99,7 @@ public class GameScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
+        YebGame game = YebGame.instance();
         level = level.wiggle();
         win = level.hasWon();
 
@@ -176,7 +175,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private void toMenuScreen() {
-        game.setScreen(new MenuScreen(game));
+        YebGame.instance().setScreen(new MenuScreen());
         dispose();
     }
 

@@ -9,12 +9,11 @@ import org.yeb.YebGame;
 public class HtmlLauncher extends GwtApplication {
     @Override
     public GwtApplicationConfiguration getConfig() {
-        GwtApplicationConfiguration cfg = new GwtApplicationConfiguration(1000, 800);
-        return cfg;
+        return new GwtApplicationConfiguration(1000, 800);
     }
 
     @Override
     public ApplicationListener createApplicationListener() {
-        return new YebGame();
+        return YebGame.instance();
     }
 }
