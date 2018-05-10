@@ -20,7 +20,7 @@ class Levels {
                     .node(100F, 700F)
                     .node(500F,250F)
                     .node(500F, 550F).build(),
-            new Level.Builder(1893F)
+            new Level.Builder(1858F)
                     .node(100F, 100F)
                     .node(100F, 500F)
                     .node(500F, 300F)
