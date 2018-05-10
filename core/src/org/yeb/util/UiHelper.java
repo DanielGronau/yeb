@@ -24,10 +24,10 @@ public class UiHelper {
 
         //Create a button style
         TextButton.TextButtonStyle textButtonStyle = new TextButton.TextButtonStyle();
-        textButtonStyle.up = skin.newDrawable("background", baseColor);
-        textButtonStyle.down = skin.newDrawable("background", baseColor.mul(0.8F));
-        textButtonStyle.checked = skin.newDrawable("background", baseColor.mul(0.8F));
-        textButtonStyle.over = skin.newDrawable("background", baseColor.mul(1.2F));
+        textButtonStyle.up = skin.newDrawable("background", new Color(baseColor));
+        textButtonStyle.down = skin.newDrawable("background", new Color(baseColor).mul(0.8F));
+        textButtonStyle.checked = skin.newDrawable("background", new Color(baseColor).mul(0.8F));
+        textButtonStyle.over = skin.newDrawable("background", new Color(baseColor).mul(1.2F));
         textButtonStyle.font = skin.getFont("default");
         skin.add("default", textButtonStyle);
         return skin;

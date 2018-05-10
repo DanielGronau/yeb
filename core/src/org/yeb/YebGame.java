@@ -14,13 +14,11 @@ public class YebGame extends Game {
     public BitmapFont font;
     public Color background = new Color(0.87F, 0.85F, 0.85F, 1F);
 
-
+    private YebGame() {}
 
     public static YebGame instance() {
         return INSTANCE;
     }
-
-    private YebGame() {}
 
     @Override
     public void create() {
