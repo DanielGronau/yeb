@@ -24,10 +24,12 @@ public class MenuScreen extends ScreenAdapter {
             stage.addActor(UiHelper.makeButton(skin, "Level " + (index + 1), 100, 500 - 50 * index,
                     () -> {
                         YebGame.instance().setScreen(new GameScreen(level));
+                        YebGame.instance().menuMusic.stop();
                         dispose();
                     }));
         }
         Gdx.input.setInputProcessor(stage);
+        YebGame.instance().menuMusic.play();
     }
 
     @Override

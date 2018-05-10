@@ -55,9 +55,6 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private boolean mouseDown(int x, int y, int button) {
-        if (button != Input.Buttons.LEFT) {
-            return false;
-        }
         Vector3 touchPos = new Vector3(x, y, 0F);
         camera.unproject(touchPos);
         return Optionals.or(pickedNodeJoint(touchPos), () -> pickedEdgeJoint(touchPos))
