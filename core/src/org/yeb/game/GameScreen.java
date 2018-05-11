@@ -1,7 +1,10 @@
 package org.yeb.game;
 
-import com.badlogic.gdx.*;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.InputAdapter;
+import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -22,6 +25,7 @@ import org.yeb.util.UiHelper;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Stack;
 
 import static org.yeb.util.UiHelper.makeButton;
@@ -29,6 +33,9 @@ import static org.yeb.util.UiHelper.makeButton;
 public class GameScreen extends ScreenAdapter {
 
     private static final float JOINT_RADIUS = 15F;
+    private static final double HALF_TONE = Math.pow(2, 1.0/12);
+    private static final int[] SCALE = {0,2,5,7,11,12}; //c,d,f,g,h,C
+    private static final Random RANDOM = new Random();
 
     private final OrthographicCamera camera = new OrthographicCamera();
     private final Stage stage = new Stage();
@@ -50,14 +57,15 @@ public class GameScreen extends ScreenAdapter {
 
         Skin skin = UiHelper.makeSkin(YebGame.instance().font, Color.GRAY);
         stage.addActor(makeButton(skin, "Resign", 50, 20, this::toMenuScreen));
-        stage.addActor(makeButton(skin, "Reset", 150, 20, this::reset));
-        stage.addActor(makeButton(skin, "Undo", 250, 20, this::undo));
+        stage.addActor(makeButton(skin, "Reset", 200, 20, this::reset));
+        stage.addActor(makeButton(skin, "Undo", 350, 20, this::undo));
     }
 
     private boolean mouseDown(int x, int y, int button) {
         Vector3 touchPos = new Vector3(x, y, 0F);
         camera.unproject(touchPos);
         return Optionals.or(pickedNodeJoint(touchPos), () -> pickedEdgeJoint(touchPos))
+                       .map(GameScreen::makePing)
                        .map(pickedJoint ->
                                     marked = marked.map(markedJoint -> {
                                         tryToCreateEdge(pickedJoint, markedJoint);
@@ -98,7 +106,10 @@ public class GameScreen extends ScreenAdapter {
     public void render(float delta) {
         YebGame game = YebGame.instance();
         level = level.wiggle();
-        win = level.hasWon();
+        if (win != level.hasWon()) {
+            YebGame.instance().winSound(0.3F);
+            win = true;
+        }
 
         Color background = game.background;
         Gdx.gl.glClearColor(background.r, background.g, background.b, background.a);
@@ -211,5 +222,11 @@ public class GameScreen extends ScreenAdapter {
         };
     }
 
+    private static Joint makePing(Joint joint) {
+        float pan = (RANDOM.nextFloat() % 2) - 1;
+        float pitch = (float) Math.pow(HALF_TONE, SCALE[RANDOM.nextInt(6)]);
+        YebGame.instance().jointClick(1F, pitch, pan);
+        return joint;
+    }
 
 }

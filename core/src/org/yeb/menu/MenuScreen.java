@@ -18,18 +18,31 @@ public class MenuScreen extends ScreenAdapter {
     private final Texture title = new Texture("yeb_title.png");
 
     public MenuScreen() {
-        Skin skin = UiHelper.makeSkin(YebGame.instance().font, Color.BLUE);
+        YebGame game = YebGame.instance();
+        Skin skin = UiHelper.makeSkin(game.font, Color.BLUE);
         for (int index = 0; index < Levels.LEVELS.size(); index++) {
             Level level = Levels.LEVELS.get(index);
             stage.addActor(UiHelper.makeButton(skin, "Level " + (index + 1), 100, 500 - 50 * index,
                     () -> {
-                        YebGame.instance().setScreen(new GameScreen(level));
-                        YebGame.instance().menuMusic.stop();
+                        game.setScreen(new GameScreen(level));
+                        game.stopMenuMusic();
                         dispose();
                     }));
         }
+
+        skin = UiHelper.makeSkin(game.font, Color.PURPLE);
+        stage.addActor(UiHelper.makeButton(skin, "Toggle SFX", 100, 100, () -> game.sfx = ! game.sfx));
+        stage.addActor(UiHelper.makeButton(skin, "Toggle Music", 250, 100, () -> {
+            game.music = ! game.music;
+            if (game.music) {
+                game.playMenuMusic();
+            } else {
+                game.stopMenuMusic();
+            }
+        }));
+
         Gdx.input.setInputProcessor(stage);
-        YebGame.instance().menuMusic.play();
+        game.playMenuMusic();
     }
 
     @Override

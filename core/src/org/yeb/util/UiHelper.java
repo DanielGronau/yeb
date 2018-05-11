@@ -5,10 +5,12 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import org.yeb.YebGame;
 
 public class UiHelper {
 
@@ -26,8 +28,6 @@ public class UiHelper {
         TextButton.TextButtonStyle textButtonStyle = new TextButton.TextButtonStyle();
         textButtonStyle.up = skin.newDrawable("background", new Color(baseColor));
         textButtonStyle.down = skin.newDrawable("background", new Color(baseColor).mul(0.8F));
-        textButtonStyle.checked = skin.newDrawable("background", new Color(baseColor).mul(0.8F));
-        textButtonStyle.over = skin.newDrawable("background", new Color(baseColor).mul(1.2F));
         textButtonStyle.font = skin.getFont("default");
         skin.add("default", textButtonStyle);
         return skin;
@@ -36,10 +36,12 @@ public class UiHelper {
     public static TextButton makeButton(Skin skin, String caption, int x, int y, Runnable action) {
         TextButton button = new TextButton(caption, skin);
         button.setPosition(x, y);
+        button.setWidth(100F);
         button.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 if (button == Input.Buttons.LEFT) {
+                    YebGame.instance().buttonClick();
                     action.run();
                 }
                 return true;

@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 public class Level {
 
-    private static Random random = new Random();
+    private static final Random RANDOM = new Random();
 
     public final Set<Node> nodes;
     public final Set<Edge> edges;
@@ -101,7 +101,7 @@ public class Level {
             Collections.shuffle(innerNodes);
             Node node = innerNodes.get(0);
             float oldDist = totalEdgeLength();
-            Vector2 rnd = new Vector2(random.nextInt(21) - 10, random.nextInt(21) - 10);
+            Vector2 rnd = new Vector2(RANDOM.nextInt(21) - 10, RANDOM.nextInt(21) - 10);
             Node newNode = new Node(node.id, rnd.add(node.pos), false);
             Set<Node> newSet = new HashSet<>(nodes);
             newSet.removeIf(n -> n.id == node.id);
