@@ -8,7 +8,6 @@ import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -33,13 +32,13 @@ import static org.yeb.util.UiHelper.makeButton;
 public class GameScreen extends ScreenAdapter {
 
     private static final float JOINT_RADIUS = 15F;
-    private static final double HALF_TONE = Math.pow(2, 1.0/12);
-    private static final int[] SCALE = {0,2,5,7,11,12}; //c,d,f,g,h,C
+    private static final double HALF_TONE = Math.pow(2, 1.0 / 12);
+    private static final int[] SCALE = {0, 2, 5, 7, 11, 12}; //c,d,f,g,h,C
     private static final Random RANDOM = new Random();
 
     private final OrthographicCamera camera = new OrthographicCamera();
     private final Stage stage = new Stage();
-    private final Texture levelSolved = new Texture("level_solved.png");
+    private final ShapeRenderer sr = new ShapeRenderer();
 
     private Level level;
     private Stack<Level> history = new Stack<>();
@@ -127,7 +126,9 @@ public class GameScreen extends ScreenAdapter {
 
         if (win) {
             game.batch.begin();
-            game.batch.draw(levelSolved, 500 - levelSolved.getWidth() / 2, 400 - levelSolved.getHeight() / 2);
+            game.batch.draw(game.levelSolvedBanner,
+                    500 - game.levelSolvedBanner.getWidth() / 2,
+                    400 - game.levelSolvedBanner.getHeight() / 2);
             game.batch.end();
         }
 
@@ -136,7 +137,6 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private void renderLevel() {
-        ShapeRenderer sr = new ShapeRenderer();
         sr.setAutoShapeType(true);
         sr.setProjectionMatrix(camera.combined);
 
@@ -229,4 +229,10 @@ public class GameScreen extends ScreenAdapter {
         return joint;
     }
 
+    @Override
+    public void dispose() {
+        stage.dispose();
+        sr.dispose();
+        super.dispose();
+    }
 }

@@ -5,9 +5,14 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.utils.Disposable;
 import org.yeb.menu.MenuScreen;
+
+import java.util.LinkedList;
+import java.util.List;
 
 public class YebGame extends Game {
 
@@ -22,6 +27,9 @@ public class YebGame extends Game {
     private Sound jointClick;
     private Sound buttonClick;
     private Sound winSound;
+    public Texture titleBanner;
+    public Texture levelSolvedBanner;
+    private final List<Disposable> disposables = new LinkedList<>();
 
     private YebGame() {}
 
@@ -31,15 +39,17 @@ public class YebGame extends Game {
 
     @Override
     public void create() {
-        batch = new SpriteBatch();
-        //Use LibGDX's default Arial font.
-        font = new BitmapFont();
-        menuMusic = Gdx.audio.newMusic(Gdx.files.internal("gameMenu.mp3"));
+        batch = register(new SpriteBatch());
+        font = register(new BitmapFont()); //default Arial font
+        jointClick = register(Gdx.audio.newSound(Gdx.files.internal("aTone.mp3")));
+        buttonClick = register(Gdx.audio.newSound(Gdx.files.internal("button.mp3")));
+        winSound = register(Gdx.audio.newSound(Gdx.files.internal("tada.mp3")));
+        titleBanner = register(new Texture("yeb_title.png"));
+        levelSolvedBanner = register(new Texture("level_solved.png"));
+        menuMusic = register(Gdx.audio.newMusic(Gdx.files.internal("gameMenu.mp3")));
         menuMusic.setLooping(true);
         menuMusic.setVolume(0.5F);
-        jointClick = Gdx.audio.newSound(Gdx.files.internal("aTone.mp3"));
-        buttonClick = Gdx.audio.newSound(Gdx.files.internal("button.mp3"));
-        winSound = Gdx.audio.newSound(Gdx.files.internal("tada.mp3"));
+
         this.setScreen(new MenuScreen());
     }
 
@@ -73,13 +83,13 @@ public class YebGame extends Game {
         }
     }
 
+    private <T extends Disposable> T register(T disposable) {
+        disposables.add(disposable);
+        return disposable;
+    }
+
     @Override
     public void dispose() {
-        batch.dispose();
-        font.dispose();
-        menuMusic.dispose();
-        buttonClick.dispose();
-        jointClick.dispose();
-        winSound.dispose();
+        disposables.forEach(Disposable::dispose);
     }
 }

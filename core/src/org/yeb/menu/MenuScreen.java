@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import org.yeb.YebGame;
@@ -15,7 +14,6 @@ import org.yeb.util.UiHelper;
 public class MenuScreen extends ScreenAdapter {
 
     private final Stage stage = new Stage();
-    private final Texture title = new Texture("yeb_title.png");
 
     public MenuScreen() {
         YebGame game = YebGame.instance();
@@ -31,9 +29,9 @@ public class MenuScreen extends ScreenAdapter {
         }
 
         skin = UiHelper.makeSkin(game.font, Color.PURPLE);
-        stage.addActor(UiHelper.makeButton(skin, "Toggle SFX", 100, 100, () -> game.sfx = ! game.sfx));
+        stage.addActor(UiHelper.makeButton(skin, "Toggle SFX", 100, 100, () -> game.sfx = !game.sfx));
         stage.addActor(UiHelper.makeButton(skin, "Toggle Music", 250, 100, () -> {
-            game.music = ! game.music;
+            game.music = !game.music;
             if (game.music) {
                 game.playMenuMusic();
             } else {
@@ -52,11 +50,16 @@ public class MenuScreen extends ScreenAdapter {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         game.batch.begin();
-        game.batch.draw(title, 100, 650);
+        game.batch.draw(YebGame.instance().titleBanner, 100, 650);
         game.batch.end();
 
         stage.act();
         stage.draw();
     }
 
+    @Override
+    public void dispose() {
+        stage.dispose();
+        super.dispose();
+    }
 }
