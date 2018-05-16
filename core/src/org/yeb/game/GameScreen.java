@@ -32,6 +32,8 @@ import static org.yeb.util.UiHelper.makeButton;
 public class GameScreen extends ScreenAdapter {
 
     private static final float JOINT_RADIUS = 15F;
+    private static final float SHADOW = 10F;
+    private static final Color SHADOW_COLOR = new Color(0.7F,0.7F,0.7F, 0.2F);
     private static final double HALF_TONE = Math.pow(2, 1.0 / 12);
     private static final int[] SCALE = {0, 2, 5, 7, 11, 12}; //c,d,f,g,h,C
     private static final Random RANDOM = new Random();
@@ -141,7 +143,20 @@ public class GameScreen extends ScreenAdapter {
         sr.setProjectionMatrix(camera.combined);
 
         sr.begin(ShapeRenderer.ShapeType.Filled);
-        sr.setColor(Color.GRAY);
+        sr.setColor(SHADOW_COLOR);
+        level.obstacles.forEach(obstacle -> obstacle.renderShadow(sr, SHADOW, SHADOW));
+        level.edges.forEach(edge -> {
+            Node n1 = level.nodeById(edge.id1);
+            Node n2 = level.nodeById(edge.id2);
+            sr.rectLine(n1.pos.x + SHADOW, n1.pos.y -SHADOW, n2.pos.x + SHADOW, n2.pos.y - SHADOW, 6F);
+            Vector2 middle = level.middle(edge);
+            sr.circle(middle.x + SHADOW, middle.y - SHADOW, JOINT_RADIUS);
+        });
+        level.nodes.forEach(node -> {
+            sr.circle(node.pos.x + SHADOW, node.pos.y - SHADOW, JOINT_RADIUS);
+        });
+
+        sr.setColor(Color.DARK_GRAY);
         level.obstacles.forEach(obstacle -> obstacle.render(sr));
         level.edges.forEach(edge -> {
             Node n1 = level.nodeById(edge.id1);

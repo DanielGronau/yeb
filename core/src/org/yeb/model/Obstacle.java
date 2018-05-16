@@ -1,11 +1,14 @@
 package org.yeb.model;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.*;
 
 public interface Obstacle {
 
     void render(ShapeRenderer sr);
+
+    void renderShadow(ShapeRenderer sr, float shadowX, float shadowY);
 
     boolean intersectsLine(Vector2 start, Vector2 end);
 
@@ -16,6 +19,10 @@ public interface Obstacle {
 
             public void render(ShapeRenderer sr) {
                 sr.circle(circle.x, circle.y, circle.radius, 50);
+            }
+
+            public void renderShadow(ShapeRenderer sr, float shadowX, float shadowY) {
+                sr.circle(circle.x + shadowX, circle.y - shadowY, circle.radius, 50);
             }
 
             @Override
@@ -36,6 +43,10 @@ public interface Obstacle {
 
             public void render(ShapeRenderer sr) {
                 sr.rect(rect.x, rect.y, rect.width, rect.height);
+            }
+
+            public void renderShadow(ShapeRenderer sr, float shadowX, float shadowY) {
+                sr.rect(rect.x + shadowX, rect.y - shadowY, rect.width, rect.height);
             }
 
             @Override
