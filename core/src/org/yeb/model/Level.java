@@ -12,27 +12,27 @@ public class Level {
 
     private static final Random RANDOM = new Random();
 
-    public final Set<Node> nodes;
+    public final Map<Integer, Node> nodes;
     public final Set<Edge> edges;
     public final float winLength;
     public final List<Obstacle> obstacles;
 
-    public Level(Set<Node> nodes, Set<Edge> edges, float winLength, List<Obstacle> obstacles) {
+    private Boolean allNodesConnected = null;
+    private Boolean hasCycle = null;
+
+    public Level(Map<Integer, Node> nodes, Set<Edge> edges, float winLength, List<Obstacle> obstacles) {
         this.nodes = nodes;
         this.edges = edges;
         this.winLength = winLength;
         this.obstacles = obstacles;
     }
 
-    private Level copy(Set<Node> newNodes, Set<Edge> newEdges) {
+    private Level copy(Map<Integer, Node> newNodes, Set<Edge> newEdges) {
         return new Level(newNodes, newEdges, winLength, obstacles);
     }
 
     public Node nodeById(int id) {
-        return nodes.stream()
-                       .filter(node -> node.id == id)
-                       .findFirst()
-                       .orElseThrow(() -> new RuntimeException("unknown id"));
+        return Objects.requireNonNull(nodes.get(id));
     }
 
     private Node edgeNode1(Edge edge) {
@@ -70,8 +70,8 @@ public class Level {
     public Pair<Level, Integer> splitEdge(Edge edge) {
         Vector2 middle = middle(edge);
         Node node = new Node(newId(), middle, false);
-        Set<Node> newNodes = new HashSet<>(nodes);
-        newNodes.add(node);
+        Map<Integer, Node> newNodes = new HashMap<>(nodes);
+        newNodes.put(node.id, node);
         Edge edge1 = new Edge(edge.id1, node.id);
         Edge edge2 = new Edge(edge.id2, node.id);
         Set<Edge> newEdges = new HashSet<>(edges);
@@ -88,7 +88,7 @@ public class Level {
     }
 
     private int newId() {
-        return 1 + nodes.stream().map(node -> node.id).reduce(Math::max).orElse(0);
+        return 1 + nodes.keySet().stream().reduce(Math::max).orElse(0);
     }
 
     public float totalEdgeLength() {
@@ -96,19 +96,22 @@ public class Level {
     }
 
     public Level wiggle() {
-        List<Node> innerNodes = nodes.stream().filter(node -> !node.leaf).collect(Collectors.toList());
+        List<Node> innerNodes = nodes.values().stream().filter(node -> !node.leaf).collect(Collectors.toList());
         if (!innerNodes.isEmpty()) {
             Collections.shuffle(innerNodes);
             Node node = innerNodes.get(0);
             float oldDist = totalEdgeLength();
             Vector2 rnd = new Vector2(RANDOM.nextInt(21) - 10, RANDOM.nextInt(21) - 10);
             Node newNode = new Node(node.id, rnd.add(node.pos), false);
-            Set<Node> newSet = new HashSet<>(nodes);
-            newSet.removeIf(n -> n.id == node.id);
-            newSet.add(newNode);
-            Level newLevel = copy(newSet, edges);
+            Map<Integer, Node> newNodes = new HashMap<>(nodes);
+            newNodes.put(newNode.id, newNode);
+            Level newLevel = copy(newNodes, edges);
             float newDist = newLevel.totalEdgeLength();
-            if (newDist < oldDist) return newLevel;
+            if (newDist < oldDist) {
+                newLevel.hasCycle = hasCycle;
+                newLevel.allNodesConnected = allNodesConnected;
+                return newLevel;
+            }
         }
         return this;
     }
@@ -120,33 +123,40 @@ public class Level {
     }
 
     private boolean allNodesConnected() {
-        List<Set<Integer>> sets = singletonNodeIdSets();
-        for (Edge edge : edges) {
-            Set<Integer> set1 = findSet(sets, edge.id1);
-            Set<Integer> set2 = findSet(sets, edge.id2);
-            if (set1 == set2) {
-                continue;
+        if (allNodesConnected == null) {
+            List<Set<Integer>> sets = singletonNodeIdSets();
+            for (Edge edge : edges) {
+                Set<Integer> set1 = findSet(sets, edge.id1);
+                Set<Integer> set2 = findSet(sets, edge.id2);
+                if (set1 == set2) {
+                    continue;
+                }
+                mergeSets(sets, set1, set2);
             }
-            mergeSets(sets, set1, set2);
+            allNodesConnected = sets.size() == 1;
         }
-        return sets.size() == 1;
+        return allNodesConnected;
     }
 
     private boolean hasCycle() {
-        List<Set<Integer>> sets = singletonNodeIdSets();
-        for (Edge edge : edges) {
-            Set<Integer> set1 = findSet(sets, edge.id1);
-            Set<Integer> set2 = findSet(sets, edge.id2);
-            if (set1 == set2) {
-                return true;
+        if (hasCycle == null) {
+            hasCycle = false;
+            List<Set<Integer>> sets = singletonNodeIdSets();
+            for (Edge edge : edges) {
+                Set<Integer> set1 = findSet(sets, edge.id1);
+                Set<Integer> set2 = findSet(sets, edge.id2);
+                if (set1 == set2) {
+                    hasCycle = true;
+                    break;
+                }
+                mergeSets(sets, set1, set2);
             }
-            mergeSets(sets, set1, set2);
         }
-        return false;
+        return hasCycle;
     }
 
     private List<Set<Integer>> singletonNodeIdSets() {
-        return nodes.stream().map(node -> Collections.singleton(node.id)).collect(Collectors.toList());
+        return nodes.values().stream().map(node -> Collections.singleton(node.id)).collect(Collectors.toList());
     }
 
     private Set<Integer> findSet(List<Set<Integer>> sets, int id) {
@@ -162,7 +172,7 @@ public class Level {
     }
 
     public static class Builder {
-        private Set<Node> nodes = new HashSet<>();
+        private Map<Integer, Node> nodes = new HashMap<>();
         private List<Obstacle> obstacles = new ArrayList<>();
         private final float winLength;
         private int index = 1;
@@ -172,7 +182,8 @@ public class Level {
         }
 
         public Builder node(float x, float y) {
-            nodes.add(new Node(index++, new Vector2(x, y), true));
+            nodes.put(index, new Node(index, new Vector2(x, y), true));
+            index++;
             return this;
         }
 

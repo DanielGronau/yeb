@@ -87,7 +87,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private Optional<Joint> pickedNodeJoint(Vector3 touchPos) {
-        return level.nodes.stream()
+        return level.nodes.values().stream()
                        .filter(node -> touchPos.dst(node.pos.x, node.pos.y, 0F) < JOINT_RADIUS)
                        .findFirst()
                        .map(node -> Joint.ofNodeId(node.id));
@@ -152,7 +152,7 @@ public class GameScreen extends ScreenAdapter {
             Vector2 middle = level.middle(edge);
             sr.circle(middle.x + SHADOW, middle.y - SHADOW, JOINT_RADIUS);
         });
-        level.nodes.forEach(node -> {
+        level.nodes.values().forEach(node -> {
             sr.circle(node.pos.x + SHADOW, node.pos.y - SHADOW, JOINT_RADIUS);
         });
 
@@ -167,7 +167,7 @@ public class GameScreen extends ScreenAdapter {
             sr.setColor(edgeJointColor(edge));
             sr.circle(middle.x, middle.y, JOINT_RADIUS);
         });
-        level.nodes.forEach(node -> {
+        level.nodes.values().forEach(node -> {
             sr.setColor(nodeJointColor(node));
             sr.circle(node.pos.x, node.pos.y, JOINT_RADIUS);
         });
