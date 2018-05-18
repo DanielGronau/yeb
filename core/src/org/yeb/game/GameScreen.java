@@ -46,6 +46,7 @@ public class GameScreen extends ScreenAdapter {
     private Stack<Level> history = new Stack<>();
     private Optional<Joint> marked = Optional.empty();
     private boolean win = false;
+    private float animationTime = 0F;
 
     public GameScreen(Level level) {
         this.level = level;
@@ -105,6 +106,8 @@ public class GameScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
+        animationTime = (animationTime + delta) % 1;
+
         YebGame game = YebGame.instance();
         level = level.wiggle();
         if (win != level.hasWon()) {
@@ -143,6 +146,7 @@ public class GameScreen extends ScreenAdapter {
         sr.setProjectionMatrix(camera.combined);
 
         sr.begin(ShapeRenderer.ShapeType.Filled);
+        Gdx.gl.glLineWidth(4);
         sr.setColor(SHADOW_COLOR);
         level.obstacles.forEach(obstacle -> obstacle.renderShadow(sr, SHADOW, SHADOW));
         level.edges.forEach(edge -> {
@@ -154,6 +158,12 @@ public class GameScreen extends ScreenAdapter {
         });
         level.nodes.values().forEach(node -> {
             sr.circle(node.pos.x + SHADOW, node.pos.y - SHADOW, JOINT_RADIUS);
+        });
+        marked.ifPresent(joint -> {
+            sr.set(ShapeRenderer.ShapeType.Line);
+            Vector2 center = joint.asNode(level).pos;
+            sr.circle(center.x + SHADOW, center.y - SHADOW, JOINT_RADIUS + 3 + 10 * animationTime, 25);
+            sr.set(ShapeRenderer.ShapeType.Filled);
         });
 
         sr.setColor(Color.DARK_GRAY);
@@ -171,23 +181,22 @@ public class GameScreen extends ScreenAdapter {
             sr.setColor(nodeJointColor(node));
             sr.circle(node.pos.x, node.pos.y, JOINT_RADIUS);
         });
+        marked.ifPresent(joint -> {
+            Gdx.gl.glLineWidth(3);
+            sr.set(ShapeRenderer.ShapeType.Line);
+            sr.setColor(Color.SALMON);
+            Vector2 center = joint.asNode(level).pos;
+            sr.circle(center.x, center.y, JOINT_RADIUS + 3 + 10 * animationTime, 25);
+        });
         sr.end();
     }
 
     private Color nodeJointColor(Node node) {
-        if (marked.filter(m -> node.id == m.asNode(level).id).isPresent()) {
-            return Color.RED;
-        } else if (node.leaf) {
-            return Color.BLUE;
-        } else {
-            return Color.GREEN;
-        }
+        return node.leaf ? Color.BLUE : Color.GREEN;
     }
 
     private Color edgeJointColor(Edge edge) {
-        return marked.flatMap(m -> m.asEdge().filter(e -> e == edge)).isPresent()
-                       ? Color.RED
-                       : Color.PURPLE;
+        return  Color.PURPLE;
     }
 
     private String distanceFeedback() {
@@ -206,12 +215,14 @@ public class GameScreen extends ScreenAdapter {
         if (!history.isEmpty()) {
             GameScreen.this.level = history.firstElement();
             history = new Stack<>();
+            marked = Optional.empty();
         }
     }
 
     private void undo() {
         if (!history.isEmpty()) {
             GameScreen.this.level = history.pop();
+            marked = Optional.empty();
         }
     }
 
