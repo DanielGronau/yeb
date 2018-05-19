@@ -33,7 +33,7 @@ public class GameScreen extends ScreenAdapter {
 
     private static final float JOINT_RADIUS = 15F;
     private static final float SHADOW = 10F;
-    private static final Color SHADOW_COLOR = new Color(0.7F,0.7F,0.7F, 0.2F);
+    private static final Color SHADOW_COLOR = new Color(0.7F, 0.7F, 0.7F, 0.2F);
     private static final double HALF_TONE = Math.pow(2, 1.0 / 12);
     private static final int[] SCALE = {0, 2, 5, 7, 11, 12}; //c,d,f,g,h,C
     private static final Random RANDOM = new Random();
@@ -67,24 +67,35 @@ public class GameScreen extends ScreenAdapter {
         Vector3 touchPos = new Vector3(x, y, 0F);
         camera.unproject(touchPos);
         return Optionals.or(pickedNodeJoint(touchPos), () -> pickedEdgeJoint(touchPos))
-                       .map(GameScreen::makePing)
                        .map(pickedJoint ->
                                     marked = marked.map(markedJoint -> {
-                                        tryToCreateEdge(pickedJoint, markedJoint);
-                                        return Optional.<Joint>empty();
-                                    }).orElseGet(() -> Optional.of(pickedJoint)))
+                                        if(tryToCreateEdge(pickedJoint, markedJoint)) {
+                                            makePing();
+                                            return Optional.<Joint>empty();
+                                        } else {
+                                            makeMeep();
+                                            return marked;
+                                        }
+                                    }).orElseGet(() -> {
+                                        makePing();
+                                        return Optional.of(pickedJoint);
+                                    }))
                        .isPresent();
     }
 
-    private void tryToCreateEdge(Joint picked, Joint marked) {
+    private boolean tryToCreateEdge(Joint picked, Joint marked) {
         Pair<Level, Integer> tuple1 = picked.withNode(level);
         Level levelWithEdge1 = tuple1._1;
         Pair<Level, Integer> tuple2 = marked.withNode(levelWithEdge1);
         Level levelWithEdge2 = tuple2._1;
-        levelWithEdge2.createEdge(tuple1._2, tuple2._2).ifPresent(newLevel -> {
-            history.push(level);
-            level = newLevel;
-        });
+        return levelWithEdge2
+                       .createEdge(tuple1._2, tuple2._2)
+                       .map(newLevel -> {
+                           history.push(level);
+                           level = newLevel;
+                           return true;
+                       })
+                       .orElse(false);
     }
 
     private Optional<Joint> pickedNodeJoint(Vector3 touchPos) {
@@ -152,7 +163,7 @@ public class GameScreen extends ScreenAdapter {
         level.edges.forEach(edge -> {
             Node n1 = level.nodeById(edge.id1);
             Node n2 = level.nodeById(edge.id2);
-            sr.rectLine(n1.pos.x + SHADOW, n1.pos.y -SHADOW, n2.pos.x + SHADOW, n2.pos.y - SHADOW, 6F);
+            sr.rectLine(n1.pos.x + SHADOW, n1.pos.y - SHADOW, n2.pos.x + SHADOW, n2.pos.y - SHADOW, 6F);
             Vector2 middle = level.middle(edge);
             sr.circle(middle.x + SHADOW, middle.y - SHADOW, JOINT_RADIUS);
         });
@@ -196,7 +207,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private Color edgeJointColor(Edge edge) {
-        return  Color.PURPLE;
+        return Color.PURPLE;
     }
 
     private String distanceFeedback() {
@@ -248,11 +259,14 @@ public class GameScreen extends ScreenAdapter {
         };
     }
 
-    private static Joint makePing(Joint joint) {
+    private static void makePing() {
         float pan = (RANDOM.nextFloat() % 2) - 1;
         float pitch = (float) Math.pow(HALF_TONE, SCALE[RANDOM.nextInt(6)]);
         YebGame.instance().jointClick(1F, pitch, pan);
-        return joint;
+    }
+
+    private static void makeMeep() {
+        YebGame.instance().invalidClick(1);
     }
 
     @Override

@@ -27,6 +27,7 @@ public class YebGame extends Game {
     private Sound jointClick;
     private Sound buttonClick;
     private Sound winSound;
+    private Sound invalidClick;
     public Texture titleBanner;
     public Texture levelSolvedBanner;
     private final List<Disposable> disposables = new LinkedList<>();
@@ -44,6 +45,7 @@ public class YebGame extends Game {
         jointClick = register(Gdx.audio.newSound(Gdx.files.internal("aTone.mp3")));
         buttonClick = register(Gdx.audio.newSound(Gdx.files.internal("button.mp3")));
         winSound = register(Gdx.audio.newSound(Gdx.files.internal("tada.mp3")));
+        invalidClick = register(Gdx.audio.newSound(Gdx.files.internal("invalid.mp3")));
         titleBanner = register(new Texture("yeb_title.png"));
         levelSolvedBanner = register(new Texture("level_solved.png"));
         menuMusic = register(Gdx.audio.newMusic(Gdx.files.internal("gameMenu.mp3")));
@@ -74,6 +76,12 @@ public class YebGame extends Game {
     public void jointClick(float volume, float pitch, float pan) {
         if (sfx) {
             jointClick.play(volume, pitch, pan);
+        }
+    }
+
+    public void invalidClick(float volume) {
+        if (sfx) {
+            invalidClick.play(volume);
         }
     }
 
