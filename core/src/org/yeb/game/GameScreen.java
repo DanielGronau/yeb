@@ -13,6 +13,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import org.yeb.SoundBank;
 import org.yeb.YebGame;
 import org.yeb.menu.MenuScreen;
 import org.yeb.model.Edge;
@@ -24,7 +25,6 @@ import org.yeb.util.UiHelper;
 
 import java.math.BigDecimal;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Stack;
 
 import static org.yeb.util.UiHelper.makeButton;
@@ -34,9 +34,6 @@ public class GameScreen extends ScreenAdapter {
     private static final float JOINT_RADIUS = 15F;
     private static final float SHADOW = 10F;
     private static final Color SHADOW_COLOR = new Color(0.7F, 0.7F, 0.7F, 0.2F);
-    private static final double HALF_TONE = Math.pow(2, 1.0 / 12);
-    private static final int[] SCALE = {0, 2, 5, 7, 11, 12}; //c,d,f,g,h,C
-    private static final Random RANDOM = new Random();
 
     private final OrthographicCamera camera = new OrthographicCamera();
     private final Stage stage = new Stage();
@@ -69,15 +66,15 @@ public class GameScreen extends ScreenAdapter {
         return Optionals.or(pickedNodeJoint(touchPos), () -> pickedEdgeJoint(touchPos))
                        .map(pickedJoint ->
                                     marked = marked.map(markedJoint -> {
-                                        if(tryToCreateEdge(pickedJoint, markedJoint)) {
-                                            makePing();
+                                        if (tryToCreateEdge(pickedJoint, markedJoint)) {
+                                            SoundBank.jointClick();
                                             return Optional.<Joint>empty();
                                         } else {
-                                            makeMeep();
+                                            SoundBank.invalidClick();
                                             return marked;
                                         }
                                     }).orElseGet(() -> {
-                                        makePing();
+                                        SoundBank.jointClick();
                                         return Optional.of(pickedJoint);
                                     }))
                        .isPresent();
@@ -122,7 +119,7 @@ public class GameScreen extends ScreenAdapter {
         YebGame game = YebGame.instance();
         level = level.wiggle();
         if (win != level.hasWon()) {
-            YebGame.instance().winSound(0.3F);
+            SoundBank.winSound();
             win = true;
         }
 
@@ -257,16 +254,6 @@ public class GameScreen extends ScreenAdapter {
                 return false;
             }
         };
-    }
-
-    private static void makePing() {
-        float pan = (RANDOM.nextFloat() % 2) - 1;
-        float pitch = (float) Math.pow(HALF_TONE, SCALE[RANDOM.nextInt(6)]);
-        YebGame.instance().jointClick(1F, pitch, pan);
-    }
-
-    private static void makeMeep() {
-        YebGame.instance().invalidClick(1);
     }
 
     @Override

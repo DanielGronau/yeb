@@ -21,13 +21,6 @@ public class YebGame extends Game {
     public SpriteBatch batch;
     public BitmapFont font;
     public Color background = new Color(0.87F, 0.85F, 0.85F, 1F);
-    public boolean sfx = true;
-    public boolean music = true;
-    private Music menuMusic;
-    private Sound jointClick;
-    private Sound buttonClick;
-    private Sound winSound;
-    private Sound invalidClick;
     public Texture titleBanner;
     public Texture levelSolvedBanner;
     private final List<Disposable> disposables = new LinkedList<>();
@@ -42,53 +35,10 @@ public class YebGame extends Game {
     public void create() {
         batch = register(new SpriteBatch());
         font = register(new BitmapFont()); //default Arial font
-        jointClick = register(Gdx.audio.newSound(Gdx.files.internal("aTone.mp3")));
-        buttonClick = register(Gdx.audio.newSound(Gdx.files.internal("button.mp3")));
-        winSound = register(Gdx.audio.newSound(Gdx.files.internal("tada.mp3")));
-        invalidClick = register(Gdx.audio.newSound(Gdx.files.internal("invalid.mp3")));
         titleBanner = register(new Texture("yeb_title.png"));
         levelSolvedBanner = register(new Texture("level_solved.png"));
-        menuMusic = register(Gdx.audio.newMusic(Gdx.files.internal("gameMenu.mp3")));
-        menuMusic.setLooping(true);
-        menuMusic.setVolume(0.5F);
-
+        register(SoundBank.init());
         this.setScreen(new MenuScreen());
-    }
-
-    public void playMenuMusic() {
-        if (music) {
-            menuMusic.play();
-        }
-    }
-
-    public void stopMenuMusic() {
-        if (menuMusic.isPlaying()) {
-            menuMusic.stop();
-        }
-    }
-
-    public void buttonClick() {
-        if (sfx) {
-            buttonClick.play();
-        }
-    }
-
-    public void jointClick(float volume, float pitch, float pan) {
-        if (sfx) {
-            jointClick.play(volume, pitch, pan);
-        }
-    }
-
-    public void invalidClick(float volume) {
-        if (sfx) {
-            invalidClick.play(volume);
-        }
-    }
-
-    public void winSound(float volume) {
-        if (sfx) {
-            winSound.play(volume);
-        }
     }
 
     private <T extends Disposable> T register(T disposable) {

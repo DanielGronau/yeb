@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import org.yeb.SoundBank;
 import org.yeb.YebGame;
 import org.yeb.game.GameScreen;
 import org.yeb.model.Level;
@@ -23,24 +24,17 @@ public class MenuScreen extends ScreenAdapter {
             stage.addActor(UiHelper.makeButton(skin, "Level " + (index + 1), 100, 500 - 50 * index,
                     () -> {
                         game.setScreen(new GameScreen(level));
-                        game.stopMenuMusic();
+                        SoundBank.stopMenuMusic();
                         dispose();
                     }));
         }
 
         skin = UiHelper.makeSkin(game.font, Color.PURPLE);
-        stage.addActor(UiHelper.makeButton(skin, "Toggle SFX", 100, 100, () -> game.sfx = !game.sfx));
-        stage.addActor(UiHelper.makeButton(skin, "Toggle Music", 250, 100, () -> {
-            game.music = !game.music;
-            if (game.music) {
-                game.playMenuMusic();
-            } else {
-                game.stopMenuMusic();
-            }
-        }));
+        stage.addActor(UiHelper.makeButton(skin, "Toggle SFX", 100, 100, SoundBank::toggleSfx));
+        stage.addActor(UiHelper.makeButton(skin, "Toggle Music", 250, 100, SoundBank::toggleMusic));
 
         Gdx.input.setInputProcessor(stage);
-        game.playMenuMusic();
+        SoundBank.playMenuMusic();
     }
 
     @Override
