@@ -14,7 +14,7 @@ import org.yeb.menu.MenuScreen;
 import java.util.LinkedList;
 import java.util.List;
 
-public class YebGame extends Game {
+public class YebGame extends Game implements CollectingDisposable {
 
     private static YebGame INSTANCE = new YebGame();
 
@@ -41,13 +41,8 @@ public class YebGame extends Game {
         this.setScreen(new MenuScreen());
     }
 
-    private <T extends Disposable> T register(T disposable) {
-        disposables.add(disposable);
-        return disposable;
-    }
-
     @Override
-    public void dispose() {
-        disposables.forEach(Disposable::dispose);
+    public List<Disposable> disposables() {
+        return disposables;
     }
 }

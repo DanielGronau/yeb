@@ -5,16 +5,17 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.utils.Disposable;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 
-public final class SoundBank implements Disposable {
+public final class SoundBank implements CollectingDisposable {
 
     private static final SoundBank INSTANCE = new SoundBank();
 
     private static final double HALF_TONE = Math.pow(2, 1.0 / 12);
     private static final int[] SCALE = {0, 2, 5, 7, 11, 12}; //c,d,f,g,h,C
     private static final Random RANDOM = new Random();
-
 
     public boolean sfx = true;
     public boolean music = true;
@@ -23,19 +24,24 @@ public final class SoundBank implements Disposable {
     private Sound buttonClick;
     private Sound winSound;
     private Sound invalidClick;
+    private final List<Disposable> disposables = new LinkedList<>();
 
     private SoundBank() {}
 
     static SoundBank init() {
-        INSTANCE.jointClick = Gdx.audio.newSound(Gdx.files.internal("aTone.mp3"));
-        INSTANCE.buttonClick = Gdx.audio.newSound(Gdx.files.internal("button.mp3"));
-        INSTANCE.winSound = Gdx.audio.newSound(Gdx.files.internal("tada.mp3"));
-        INSTANCE.invalidClick = Gdx.audio.newSound(Gdx.files.internal("invalid.mp3"));
-
-        INSTANCE.menuMusic = Gdx.audio.newMusic(Gdx.files.internal("gameMenu.mp3"));
-        INSTANCE.menuMusic.setLooping(true);
-        INSTANCE.menuMusic.setVolume(0.5F);
+        INSTANCE.initialize();
         return INSTANCE;
+    }
+
+    private void initialize() {
+        jointClick = register(Gdx.audio.newSound(Gdx.files.internal("aTone.mp3")));
+        buttonClick = register(Gdx.audio.newSound(Gdx.files.internal("button.mp3")));
+        winSound = register(Gdx.audio.newSound(Gdx.files.internal("tada.mp3")));
+        invalidClick = register(Gdx.audio.newSound(Gdx.files.internal("invalid.mp3")));
+
+        menuMusic = register(Gdx.audio.newMusic(Gdx.files.internal("gameMenu.mp3")));
+        menuMusic.setLooping(true);
+        menuMusic.setVolume(0.5F);
     }
 
     public static void playMenuMusic() {
@@ -50,12 +56,6 @@ public final class SoundBank implements Disposable {
         }
     }
 
-    public static void buttonClick() {
-        if (INSTANCE.sfx) {
-            INSTANCE.buttonClick.play();
-        }
-    }
-
     public static void jointClick() {
         if (INSTANCE.sfx) {
             float pan = (RANDOM.nextFloat() % 2) - 1;
@@ -65,14 +65,20 @@ public final class SoundBank implements Disposable {
     }
 
     public static void invalidClick() {
-        if (INSTANCE.sfx) {
-            INSTANCE.invalidClick.play();
-        }
+        INSTANCE.click(INSTANCE.invalidClick,1);
     }
 
     public static void winSound() {
-        if (INSTANCE.sfx) {
-            INSTANCE.winSound.play(0.3F);
+        INSTANCE.click(INSTANCE.winSound,0.3F);
+    }
+
+    public static void buttonClick() {
+        INSTANCE.click(INSTANCE.buttonClick,1);
+    }
+
+    private void click(Sound sound, float volume) {
+        if (sfx) {
+            sound.play(volume);
         }
     }
 
@@ -90,11 +96,7 @@ public final class SoundBank implements Disposable {
     }
 
     @Override
-    public void dispose() {
-        menuMusic.dispose();
-        jointClick.dispose();
-        buttonClick.dispose();
-        winSound.dispose();
-        invalidClick.dispose();
+    public List<Disposable> disposables() {
+        return disposables;
     }
 }
