@@ -122,7 +122,7 @@ public class Level {
                        && !hasObstacleIntersections();
     }
 
-    private boolean allNodesConnected() {
+    public boolean allNodesConnected() {
         if (allNodesConnected == null) {
             List<Set<Integer>> sets = singletonNodeIdSets();
             for (Edge edge : edges) {

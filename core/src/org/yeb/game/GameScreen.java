@@ -64,20 +64,29 @@ public class GameScreen extends ScreenAdapter {
         Vector3 touchPos = new Vector3(x, y, 0F);
         camera.unproject(touchPos);
         return Optionals.or(pickedNodeJoint(touchPos), () -> pickedEdgeJoint(touchPos))
-                       .map(pickedJoint ->
-                                    marked = marked.map(markedJoint -> {
-                                        if (pickedJoint.equals(markedJoint) || tryToCreateEdge(pickedJoint, markedJoint)) {
-                                            SoundBank.jointClick();
-                                            return Optional.<Joint>empty();
-                                        } else {
-                                            SoundBank.invalidClick();
-                                            return marked;
-                                        }
-                                    }).orElseGet(() -> {
-                                        SoundBank.jointClick();
-                                        return Optional.of(pickedJoint);
-                                    }))
-                       .isPresent();
+                        .map(pickedJoint -> marked = marked.map(markedJoint -> jointClickedWithMarked(pickedJoint, markedJoint))
+                                                           .orElseGet(() -> jointClickedWithoutMarked(pickedJoint)))
+                        .isPresent();
+    }
+
+    private Optional<Joint> jointClickedWithMarked(Joint pickedJoint, Joint markedJoint) {
+        if (pickedJoint.equals(markedJoint) || tryToCreateEdge(pickedJoint, markedJoint)) {
+            SoundBank.jointClick();
+            return Optional.empty();
+        } else {
+            SoundBank.invalidClick();
+            return marked;
+        }
+    }
+
+    private Optional<Joint> jointClickedWithoutMarked(Joint pickedJoint) {
+        if (level.allNodesConnected()) {
+            SoundBank.invalidClick();
+            return Optional.empty();
+        } else {
+            SoundBank.jointClick();
+            return Optional.of(pickedJoint);
+        }
     }
 
     private boolean tryToCreateEdge(Joint picked, Joint marked) {
@@ -86,30 +95,32 @@ public class GameScreen extends ScreenAdapter {
         Pair<Level, Integer> tuple2 = marked.withNode(levelWithEdge1);
         Level levelWithEdge2 = tuple2._1;
         return levelWithEdge2
-                       .createEdge(tuple1._2, tuple2._2)
-                       .map(newLevel -> {
-                           history.push(level);
-                           level = newLevel;
-                           return true;
-                       })
-                       .orElse(false);
+                   .createEdge(tuple1._2, tuple2._2)
+                   .map(newLevel -> {
+                       history.push(level);
+                       level = newLevel;
+                       return true;
+                   })
+                   .orElse(false);
     }
 
     private Optional<Joint> pickedNodeJoint(Vector3 touchPos) {
-        return level.nodes.values().stream()
-                       .filter(node -> touchPos.dst(node.pos.x, node.pos.y, 0F) < JOINT_RADIUS)
-                       .findFirst()
-                       .map(node -> Joint.ofNodeId(node.id));
+        return level.nodes
+                   .values().stream()
+                   .filter(node -> touchPos.dst(node.pos.x, node.pos.y, 0F) < JOINT_RADIUS)
+                   .findFirst()
+                   .map(node -> Joint.ofNodeId(node.id));
     }
 
     private Optional<Joint> pickedEdgeJoint(Vector3 touchPos) {
-        return level.edges.stream()
-                       .filter(edge -> {
-                           Vector2 middle = level.middle(edge);
-                           return touchPos.dst(middle.x, middle.y, 0F) < JOINT_RADIUS;
-                       })
-                       .findFirst()
-                       .map(Joint::ofEdge);
+        return level.edges
+                   .stream()
+                   .filter(edge -> {
+                       Vector2 middle = level.middle(edge);
+                       return touchPos.dst(middle.x, middle.y, 0F) < JOINT_RADIUS;
+                   })
+                   .findFirst()
+                   .map(Joint::ofEdge);
     }
 
     @Override
@@ -140,8 +151,8 @@ public class GameScreen extends ScreenAdapter {
         if (win) {
             game.batch.begin();
             game.batch.draw(game.levelSolvedBanner,
-                    500 - game.levelSolvedBanner.getWidth() / 2,
-                    400 - game.levelSolvedBanner.getHeight() / 2);
+                500 - game.levelSolvedBanner.getWidth() / 2,
+                400 - game.levelSolvedBanner.getHeight() / 2);
             game.batch.end();
         }
 
@@ -210,7 +221,7 @@ public class GameScreen extends ScreenAdapter {
     private String distanceFeedback() {
         //No String.format in GWT :(
         BigDecimal bd = new BigDecimal(Float.toString(level.totalEdgeLength()))
-                                .setScale(2, BigDecimal.ROUND_HALF_UP);
+                            .setScale(2, BigDecimal.ROUND_HALF_UP);
         return "Winning distance: " + level.winLength + ", current distance: " + bd.doubleValue();
     }
 
