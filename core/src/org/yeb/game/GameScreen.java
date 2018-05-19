@@ -66,7 +66,7 @@ public class GameScreen extends ScreenAdapter {
         return Optionals.or(pickedNodeJoint(touchPos), () -> pickedEdgeJoint(touchPos))
                        .map(pickedJoint ->
                                     marked = marked.map(markedJoint -> {
-                                        if (tryToCreateEdge(pickedJoint, markedJoint)) {
+                                        if (pickedJoint.equals(markedJoint) || tryToCreateEdge(pickedJoint, markedJoint)) {
                                             SoundBank.jointClick();
                                             return Optional.<Joint>empty();
                                         } else {
