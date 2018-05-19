@@ -11,6 +11,9 @@ hs_err_pid*
 ## GWT
 /html/war/
 /html/gwt-unitCache/
+/html/webapp/html/
+/html/webapp/assets/
+/html/webapp/WEB-INF/
 .apt_generated/
 .gwt/
 gwt-unitCache/
