@@ -25,12 +25,10 @@ import org.yeb.util.Pair;
 import org.yeb.util.UiHelper;
 
 import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
-import java.util.concurrent.ConcurrentSkipListSet;
 
 import static org.yeb.util.UiHelper.makeButton;
 
@@ -91,6 +89,7 @@ public class GameScreen extends ScreenAdapter {
             return Optional.empty();
         } else {
             SoundBank.jointClick();
+            animationTime = 0;
             return Optional.of(pickedJoint);
         }
     }
