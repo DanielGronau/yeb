@@ -19,13 +19,18 @@ import org.yeb.menu.MenuScreen;
 import org.yeb.model.Edge;
 import org.yeb.model.Level;
 import org.yeb.model.Node;
+import org.yeb.util.Droplet;
 import org.yeb.util.Optionals;
 import org.yeb.util.Pair;
 import org.yeb.util.UiHelper;
 
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.Stack;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import static org.yeb.util.UiHelper.makeButton;
 
@@ -44,6 +49,7 @@ public class GameScreen extends ScreenAdapter {
     private Optional<Joint> marked = Optional.empty();
     private boolean win = false;
     private float animationTime = 0F;
+    private Set<Droplet> droplets = new HashSet<>();
 
     public GameScreen(Level level) {
         this.level = level;
@@ -127,6 +133,8 @@ public class GameScreen extends ScreenAdapter {
     public void render(float delta) {
         animationTime = (animationTime + delta) % 1;
 
+        droplets = Droplet.generateAndRemove(delta, droplets);
+
         YebGame game = YebGame.instance();
         level = level.wiggle();
         if (win != level.hasWon()) {
@@ -139,6 +147,14 @@ public class GameScreen extends ScreenAdapter {
         Gdx.gl.glClear(GL30.GL_COLOR_BUFFER_BIT);
 
         camera.update();
+
+        sr.setAutoShapeType(true);
+        sr.setProjectionMatrix(camera.combined);
+        sr.begin(ShapeRenderer.ShapeType.Line);
+        Gdx.gl.glLineWidth(1);
+        sr.setColor(new Color(game.background).mul(0.9F));
+        droplets.forEach(droplet -> droplet.render(delta, sr));
+        sr.end();
 
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
