@@ -52,6 +52,7 @@ public class GameScreen extends ScreenAdapter {
     public GameScreen(Level level) {
         this.level = level;
         camera.setToOrtho(false, 1000F, 800F);
+        camera.update();
 
         InputMultiplexer inputMultiplexer = new InputMultiplexer();
         inputMultiplexer.addProcessor(gameInput());
@@ -132,8 +133,6 @@ public class GameScreen extends ScreenAdapter {
     public void render(float delta) {
         animationTime = (animationTime + delta) % 1;
 
-        droplets = Droplet.generateAndRemove(delta, droplets);
-
         YebGame game = YebGame.instance();
         level = level.wiggle();
         if (win != level.hasWon()) {
@@ -145,15 +144,8 @@ public class GameScreen extends ScreenAdapter {
         Gdx.gl.glClearColor(background.r, background.g, background.b, background.a);
         Gdx.gl.glClear(GL30.GL_COLOR_BUFFER_BIT);
 
-        camera.update();
-
-        sr.setAutoShapeType(true);
-        sr.setProjectionMatrix(camera.combined);
-        sr.begin(ShapeRenderer.ShapeType.Line);
-        Gdx.gl.glLineWidth(1);
-        sr.setColor(new Color(game.background).mul(0.9F));
-        droplets.forEach(droplet -> droplet.render(delta, sr));
-        sr.end();
+        droplets = Droplet.generateAndRemove(delta, droplets);
+        Droplet.render(camera, sr, droplets, delta);
 
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();

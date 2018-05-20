@@ -27,6 +27,7 @@ public class MenuScreen extends ScreenAdapter {
 
     public MenuScreen() {
         camera.setToOrtho(false, 1000F, 800F);
+        camera.update();
         YebGame game = YebGame.instance();
         Skin skin = UiHelper.makeSkin(game.font, Color.BLUE);
         for (int index = 0; index < Levels.LEVELS.size(); index++) {
@@ -40,8 +41,8 @@ public class MenuScreen extends ScreenAdapter {
         }
 
         skin = UiHelper.makeSkin(game.font, Color.PURPLE);
-        stage.addActor(UiHelper.makeButton(skin, "Toggle SFX", 100, 100, SoundBank::toggleSfx));
-        stage.addActor(UiHelper.makeButton(skin, "Toggle Music", 250, 100, SoundBank::toggleMusic));
+        stage.addActor(UiHelper.makeButton(skin, "Toggle SFX", 100, 50, SoundBank::toggleSfx));
+        stage.addActor(UiHelper.makeButton(skin, "Toggle Music", 250, 50, SoundBank::toggleMusic));
 
         Gdx.input.setInputProcessor(stage);
         SoundBank.playMenuMusic();
@@ -49,20 +50,13 @@ public class MenuScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
-        droplets = Droplet.generateAndRemove(delta, droplets);
 
         YebGame game = YebGame.instance();
         Gdx.gl.glClearColor(game.background.r, game.background.g, game.background.b, game.background.a);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        camera.update();
-        sr.setAutoShapeType(true);
-        sr.setProjectionMatrix(camera.combined);
-        sr.begin(ShapeRenderer.ShapeType.Line);
-        Gdx.gl.glLineWidth(1);
-        sr.setColor(new Color(game.background).mul(0.9F));
-        droplets.forEach(droplet -> droplet.render(delta, sr));
-        sr.end();
+        droplets = Droplet.generateAndRemove(delta, droplets);
+        Droplet.render(camera, sr, droplets, delta);
 
         game.batch.begin();
         game.batch.draw(YebGame.instance().titleBanner, 100, 650);
