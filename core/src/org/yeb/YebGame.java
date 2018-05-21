@@ -42,6 +42,12 @@ public class YebGame extends Game implements CollectingDisposable {
     }
 
     @Override
+    public void dispose() {
+        super.dispose();
+        CollectingDisposable.super.dispose();
+    }
+
+    @Override
     public List<Disposable> disposables() {
         return disposables;
     }

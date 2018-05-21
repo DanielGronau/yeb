@@ -11,6 +11,7 @@ public class DesktopLauncher {
         config.height = 800;
         config.samples = 5;
         config.resizable = false;
+        config.forceExit = false;
         new LwjglApplication(YebGame.instance(), config);
     }
 }
