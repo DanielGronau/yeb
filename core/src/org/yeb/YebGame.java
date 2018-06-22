@@ -39,6 +39,7 @@ public class YebGame extends Game implements CollectingDisposable {
         levelSolvedBanner = register(new Texture("level_solved.png"));
         register(SoundBank.init());
         this.setScreen(new MenuScreen());
+        SoundBank.playBackgroundNoise();
     }
 
     @Override

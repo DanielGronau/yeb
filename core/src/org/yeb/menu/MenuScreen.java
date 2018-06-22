@@ -35,17 +35,15 @@ public class MenuScreen extends ScreenAdapter {
             stage.addActor(UiHelper.makeButton(skin, "Level " + (index + 1), 100, 500 - 50 * index,
                     () -> {
                         game.setScreen(new GameScreen(level));
-                        SoundBank.stopMenuMusic();
                         dispose();
                     }));
         }
 
         skin = UiHelper.makeSkin(game.font, Color.PURPLE);
         stage.addActor(UiHelper.makeButton(skin, "Toggle SFX", 100, 50, SoundBank::toggleSfx));
-        stage.addActor(UiHelper.makeButton(skin, "Toggle Music", 250, 50, SoundBank::toggleMusic));
+        stage.addActor(UiHelper.makeButton(skin, "Toggle Rain", 250, 50, SoundBank::toggleMusic));
 
         Gdx.input.setInputProcessor(stage);
-        SoundBank.playMenuMusic();
     }
 
     @Override

@@ -12,14 +12,13 @@ import java.util.Random;
 public final class SoundBank implements CollectingDisposable {
 
     private static final SoundBank INSTANCE = new SoundBank();
-
     private static final double HALF_TONE = Math.pow(2, 1.0 / 12);
     private static final int[] SCALE = {0, 2, 5, 7, 11, 12}; //c,d,f,g,h,C
     private static final Random RANDOM = new Random();
 
     public boolean sfx = true;
     public boolean music = true;
-    private Music menuMusic;
+    private Music backgroundNoise;
     private Sound jointClick;
     private Sound buttonClick;
     private Sound winSound;
@@ -39,20 +38,20 @@ public final class SoundBank implements CollectingDisposable {
         winSound = register(Gdx.audio.newSound(Gdx.files.internal("tada.mp3")));
         invalidClick = register(Gdx.audio.newSound(Gdx.files.internal("invalid.mp3")));
 
-        menuMusic = register(Gdx.audio.newMusic(Gdx.files.internal("gameMenu.mp3")));
-        menuMusic.setLooping(true);
-        menuMusic.setVolume(0.5F);
+        backgroundNoise = register(Gdx.audio.newMusic(Gdx.files.internal("rain.wav")));
+        backgroundNoise.setLooping(true);
+        backgroundNoise.setVolume(0.3F);
     }
 
-    public static void playMenuMusic() {
+    static void playBackgroundNoise() {
         if (INSTANCE.music) {
-            INSTANCE.menuMusic.play();
+            INSTANCE.backgroundNoise.play();
         }
     }
 
-    public static void stopMenuMusic() {
-        if (INSTANCE.menuMusic.isPlaying()) {
-            INSTANCE.menuMusic.stop();
+    private static void stopMenuMusic() {
+        if (INSTANCE.backgroundNoise.isPlaying()) {
+            INSTANCE.backgroundNoise.stop();
         }
     }
 
@@ -69,7 +68,7 @@ public final class SoundBank implements CollectingDisposable {
     }
 
     public static void winSound() {
-        INSTANCE.click(INSTANCE.winSound,0.3F);
+        INSTANCE.click(INSTANCE.winSound,0.5F);
     }
 
     public static void buttonClick() {
@@ -89,7 +88,7 @@ public final class SoundBank implements CollectingDisposable {
     public static void toggleMusic() {
         INSTANCE.music = ! INSTANCE.music;
         if (INSTANCE.music) {
-            playMenuMusic();
+            playBackgroundNoise();
         } else {
             stopMenuMusic();
         }
