@@ -1,10 +1,7 @@
 package org.yeb.game;
 
-import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.*;
 import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -68,10 +65,32 @@ public class GameScreen extends ScreenAdapter {
     private boolean mouseDown(int x, int y, int button) {
         Vector3 touchPos = new Vector3(x, y, 0F);
         camera.unproject(touchPos);
-        return Optionals.or(pickedNodeJoint(touchPos), () -> pickedEdgeJoint(touchPos))
-                        .map(pickedJoint -> marked = marked.map(markedJoint -> jointClickedWithMarked(pickedJoint, markedJoint))
-                                                           .orElseGet(() -> jointClickedWithoutMarked(pickedJoint)))
-                        .isPresent();
+        switch (button) {
+            case Input.Buttons.LEFT:
+                return Optionals.or(
+                    pickedNodeJoint(touchPos),
+                    () -> pickedEdgeJoint(touchPos))
+                                .map(pickedJoint -> marked = marked.map(
+                                    markedJoint -> jointClickedWithMarked(pickedJoint, markedJoint)
+                                ).orElseGet(() -> jointClickedWithoutMarked(pickedJoint)))
+                                .isPresent();
+            case Input.Buttons.RIGHT:
+                return pickedEdgeJoint(touchPos).map(this::removeEdge).orElse(false);
+            default:
+                return false;
+        }
+    }
+
+    private boolean removeEdge(Joint joint) {
+           return joint.asEdge()
+                       .map(edge -> {
+                           SoundBank.jointClick();
+                           marked = Optional.empty();
+                           history.push(level);
+                           level = level.removeEdge(edge);
+                           return true;
+                       })
+                       .orElse(false);
     }
 
     private Optional<Joint> jointClickedWithMarked(Joint pickedJoint, Joint markedJoint) {

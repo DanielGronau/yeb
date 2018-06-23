@@ -38,7 +38,7 @@ public final class SoundBank implements CollectingDisposable {
         winSound = register(Gdx.audio.newSound(Gdx.files.internal("tada.mp3")));
         invalidClick = register(Gdx.audio.newSound(Gdx.files.internal("invalid.mp3")));
 
-        backgroundNoise = register(Gdx.audio.newMusic(Gdx.files.internal("rain.wav")));
+        backgroundNoise = register(Gdx.audio.newMusic(Gdx.files.internal("rain.ogg")));
         backgroundNoise.setLooping(true);
         backgroundNoise.setVolume(0.3F);
     }

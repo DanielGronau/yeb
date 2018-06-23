@@ -7,6 +7,7 @@ import org.yeb.util.Pair;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Level {
 
@@ -79,6 +80,30 @@ public class Level {
         newEdges.add(edge1);
         newEdges.add(edge2);
         return Pair.of(copy(newNodes, newEdges), node.id);
+    }
+
+    public Level removeEdge(Edge edge) {
+        Set<Edge> newEdges = new HashSet<>(edges);
+        newEdges.remove(edge);
+        return copy(new HashMap<>(nodes), newEdges).mergeEdge(edge.id1).mergeEdge(edge.id2);
+    }
+
+    private Level mergeEdge(int id) {
+        Node node = nodeById(id);
+        if (node.leaf) {
+            return this;
+        }
+        List<Edge> commonEdges = edges.stream().filter(edge -> edge.id1 == id || edge.id2 == id).collect(Collectors.toList());
+        if (commonEdges.size() == 2) {
+            Set<Edge> newEdges = new HashSet<>(edges);
+            newEdges.removeAll(commonEdges);
+            List<Integer> newIds = commonEdges.stream().map(edge -> edge.id1 == id ? edge.id2 : edge.id1).collect(Collectors.toList());
+            newEdges.add(new Edge(newIds.get(0), newIds.get(1)));
+            Map<Integer, Node> newNodes = new HashMap<>(nodes);
+            newNodes.remove(id);
+            return copy(newNodes, newEdges);
+        }
+        return this;
     }
 
     public Vector2 middle(Edge edge) {
@@ -169,6 +194,12 @@ public class Level {
         sets.remove(set1);
         sets.remove(set2);
         sets.add(newSet);
+    }
+
+    private static Set<Integer> usedNodeIds(Set<Edge> newEdges) {
+        return newEdges.stream()
+                       .flatMap(edge -> Stream.of(edge.id1, edge.id2))
+                       .collect(Collectors.toSet());
     }
 
     public static class Builder {
