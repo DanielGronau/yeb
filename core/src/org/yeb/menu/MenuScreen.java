@@ -46,6 +46,8 @@ public class MenuScreen extends ScreenAdapter {
         skin = UiHelper.makeSkin(game.font, Color.PURPLE);
         stage.addActor(UiHelper.makeButton(skin, "Toggle SFX", 100, 50, SoundBank::toggleSfx));
         stage.addActor(UiHelper.makeButton(skin, "Toggle Rain", 250, 50, SoundBank::toggleMusic));
+        skin = UiHelper.makeSkin(game.font, new Color(0xB22222FF));
+        stage.addActor(UiHelper.makeButton(skin, "Exit", 800, 50, Gdx.app::exit));
 
         Gdx.input.setInputProcessor(stage);
     }
