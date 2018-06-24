@@ -49,7 +49,7 @@ public final class SoundBank implements CollectingDisposable {
         }
     }
 
-    private static void stopMenuMusic() {
+    private static void stopBackgroundMusic() {
         if (INSTANCE.backgroundNoise.isPlaying()) {
             INSTANCE.backgroundNoise.stop();
         }
@@ -90,7 +90,7 @@ public final class SoundBank implements CollectingDisposable {
         if (INSTANCE.music) {
             playBackgroundNoise();
         } else {
-            stopMenuMusic();
+            stopBackgroundMusic();
         }
     }
 

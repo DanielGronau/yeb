@@ -18,6 +18,8 @@ import org.yeb.util.UiHelper;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.yeb.menu.Levels.WON_LEVELS;
+
 public class MenuScreen extends ScreenAdapter {
 
     private final Stage stage = new Stage();
@@ -30,9 +32,11 @@ public class MenuScreen extends ScreenAdapter {
         camera.update();
         YebGame game = YebGame.instance();
         Skin skin = UiHelper.makeSkin(game.font, Color.BLUE);
+        Skin wonSkin = UiHelper.makeSkin(game.font, new Color(0x6495EDFF));
         for (int index = 0; index < Levels.LEVELS.size(); index++) {
             Level level = Levels.LEVELS.get(index);
-            stage.addActor(UiHelper.makeButton(skin, "Level " + (index + 1), 100, 500 - 50 * index,
+            Skin levelSkin = WON_LEVELS.contains(index) ? wonSkin : skin;
+            stage.addActor(UiHelper.makeButton(levelSkin, "Level " + (index + 1), 100, 500 - 50 * index,
                     () -> {
                         game.setScreen(new GameScreen(level));
                         dispose();

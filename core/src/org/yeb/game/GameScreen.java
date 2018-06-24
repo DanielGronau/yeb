@@ -12,6 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import org.yeb.SoundBank;
 import org.yeb.YebGame;
+import org.yeb.menu.Levels;
 import org.yeb.menu.MenuScreen;
 import org.yeb.model.Edge;
 import org.yeb.model.Level;
@@ -57,7 +58,7 @@ public class GameScreen extends ScreenAdapter {
         Gdx.input.setInputProcessor(inputMultiplexer);
 
         Skin skin = UiHelper.makeSkin(YebGame.instance().font, Color.GRAY);
-        stage.addActor(makeButton(skin, "Resign", 50, 20, this::toMenuScreen));
+        stage.addActor(makeButton(skin, "Menu", 50, 20, this::toMenuScreen));
         stage.addActor(makeButton(skin, "Reset", 200, 20, this::reset));
         stage.addActor(makeButton(skin, "Undo", 350, 20, this::undo));
     }
@@ -252,6 +253,9 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private void toMenuScreen() {
+        if (level.hasWon()) {
+            Levels.announceWin(history.firstElement());
+        }
         YebGame.instance().setScreen(new MenuScreen());
         dispose();
     }

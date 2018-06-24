@@ -3,9 +3,11 @@ package org.yeb.menu;
 import org.yeb.model.Level;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-class Levels {
+public class Levels {
 
     static List<Level> LEVELS = Arrays.asList(
         new Level.Builder(1840F)
@@ -79,5 +81,17 @@ class Levels {
             .rect(600, 400, 80, 120)
             .circle(400, 300, 40).build()
     );
+
+    static Set<Integer> WON_LEVELS = new HashSet<>();
+
+    public static void announceWin(Level level) {
+        for(int index = 0; index < LEVELS.size(); index++) {
+            if (LEVELS.get(index) == level) { //instance equality works here
+                WON_LEVELS.add(index);
+                return;
+            }
+        }
+    }
+
 
 }

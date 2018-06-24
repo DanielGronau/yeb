@@ -196,12 +196,6 @@ public class Level {
         sets.add(newSet);
     }
 
-    private static Set<Integer> usedNodeIds(Set<Edge> newEdges) {
-        return newEdges.stream()
-                       .flatMap(edge -> Stream.of(edge.id1, edge.id2))
-                       .collect(Collectors.toSet());
-    }
-
     public static class Builder {
         private Map<Integer, Node> nodes = new HashMap<>();
         private List<Obstacle> obstacles = new ArrayList<>();
