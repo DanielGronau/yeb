@@ -22,7 +22,6 @@ public final class SoundBank implements CollectingDisposable {
     private Sound jointClick;
     private Sound buttonClick;
     private Sound winSound;
-    private Sound invalidClick;
     private final List<Disposable> disposables = new LinkedList<>();
 
     private SoundBank() {}
@@ -36,7 +35,6 @@ public final class SoundBank implements CollectingDisposable {
         jointClick = register(Gdx.audio.newSound(Gdx.files.internal("aTone.mp3")));
         buttonClick = register(Gdx.audio.newSound(Gdx.files.internal("button.mp3")));
         winSound = register(Gdx.audio.newSound(Gdx.files.internal("tada.mp3")));
-        invalidClick = register(Gdx.audio.newSound(Gdx.files.internal("invalid.mp3")));
 
         backgroundNoise = register(Gdx.audio.newMusic(Gdx.files.internal("rain.ogg")));
         backgroundNoise.setLooping(true);
@@ -64,7 +62,14 @@ public final class SoundBank implements CollectingDisposable {
     }
 
     public static void invalidClick() {
-        INSTANCE.click(INSTANCE.invalidClick,1);
+        if (INSTANCE.sfx) {
+            float pan = (RANDOM.nextFloat() % 2) - 1;
+            int scale = RANDOM.nextInt(3) - 6;
+            float pitch1 = (float) Math.pow(HALF_TONE, scale);
+            float pitch2 = (float) Math.pow(HALF_TONE, scale + 0.9);
+            INSTANCE.jointClick.play(1F, pitch1, pan);
+            INSTANCE.jointClick.play(1F, pitch2, pan);
+        }
     }
 
     public static void winSound() {
