@@ -10,6 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import org.yeb.SoundBank;
 import org.yeb.YebGame;
 
@@ -30,7 +31,15 @@ public class UiHelper {
         textButtonStyle.up = skin.newDrawable("background", new Color(baseColor));
         textButtonStyle.down = skin.newDrawable("background", new Color(baseColor).mul(0.8F));
         textButtonStyle.font = skin.getFont("default");
+
+        TextField.TextFieldStyle textFieldStyle = new TextField.TextFieldStyle();
+        textFieldStyle.background = skin.newDrawable("background", new Color(baseColor));
+        textFieldStyle.focusedBackground = textFieldStyle.background;
+        textFieldStyle.font = skin.getFont("default");
+        textFieldStyle.fontColor = skin.getFont("default").getColor();
+
         skin.add("default", textButtonStyle);
+        skin.add("default", textFieldStyle);
         return skin;
     }
 

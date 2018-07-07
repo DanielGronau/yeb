@@ -171,6 +171,7 @@ public class GameScreen extends ScreenAdapter {
         game.batch.begin();
         game.font.setColor(Color.DARK_GRAY);
         game.font.draw(game.batch, distanceFeedback(), 10F, 780F);
+        game.font.setColor(Color.WHITE);
         game.batch.end();
 
         renderLevel();

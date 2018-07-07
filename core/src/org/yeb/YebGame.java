@@ -22,6 +22,7 @@ public class YebGame extends Game implements CollectingDisposable {
     public BitmapFont font;
     public Color background = new Color(0.87F, 0.85F, 0.85F, 1F);
     public Texture titleBanner;
+    public Texture whitePixel;
     public Texture levelSolvedBanner;
     private final List<Disposable> disposables = new LinkedList<>();
 
@@ -36,6 +37,7 @@ public class YebGame extends Game implements CollectingDisposable {
         batch = register(new SpriteBatch());
         font = register(new BitmapFont()); //default Arial font
         titleBanner = register(new Texture("yeb_title.png"));
+        whitePixel = register(new Texture("whitePixel.png"));
         levelSolvedBanner = register(new Texture("level_solved.png"));
         register(SoundBank.init());
         this.setScreen(new MenuScreen());
